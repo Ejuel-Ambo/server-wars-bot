@@ -1,0 +1,17 @@
+﻿bot:
+  prefix: "!"
+  status: "Server Wars: Online"
+  version: "1.0.0"
+
+game_settings:
+  starting_balance: 1000
+  war_cooldown_minutes: 60
+  max_guild_members: 50
+
+database:
+  pool_size: 5
+  timeout: 30
+
+channels:
+  logs: 123456789012345678
+  announcements: 123456789012345678
