@@ -1,0 +1,803 @@
+================================================================================
+SERVER WARS: DOMINION PROTOCOL - CONFIGURABILITY & DEVELOPER CONTROLS
+================================================================================
+
+This document outlines the systems that allow the developer to control features,
+adjust game balance, and manage rollout without modifying code.
+
+================================================================================
+1. CONFIGURATION ARCHITECTURE
+================================================================================
+
+THREE-TIER CONFIGURATION SYSTEM:
+
+TIER 1: Environment Variables (.env file)
+- Sensitive data (API keys, database passwords)
+- Environment selection (dev/staging/production)
+- Never committed to version control
+
+TIER 2: Core Configuration (config.yaml)
+- Game balance values
+- Feature availability
+- System settings
+- Committed to version control
+
+TIER 3: Dynamic Configuration (database config table)
+- Runtime-adjustable values
+- Per-season overrides
+- Emergency adjustments
+- Modified via admin commands
+
+================================================================================
+2. FEATURE FLAG SYSTEM
+================================================================================
+
+PURPOSE:
+- Enable/disable entire feature sets without code changes
+- Phased rollout of new features
+- Emergency feature disabling
+- A/B testing capabilities
+- Per-server feature access (premium features)
+
+FEATURE FLAG STRUCTURE (config/features.yaml):
+
+```yaml
+features:
+  # Core Systems
+  server_registration:
+    enabled: true
+    public: true
+    required_phase: 1
+    
+  citizen_registration:
+    enabled: true
+    public: true
+    required_phase: 1
+  
+  # Military Systems
+  military_building:
+    enabled: true
+    public: true
+    required_phase: 2
+    min_nation_age_hours: 0
+    
+  advanced_units:
+    enabled: false
+    public: true
+    required_phase: 3
+    
+  # Diplomatic Systems
+  alliance_formation:
+    enabled: true
+    public: true
+    required_phase: 2
+    max_per_server: 3
+    
+  vassalage:
+    enabled: false
+    public: true
+    required_phase: 3
+    
+  non_aggression_pacts:
+    enabled: false
+    public: true
+    required_phase: 3
+  
+  # War Systems
+  war_declaration:
+    enabled: true
+    public: true
+    required_phase: 2
+    cooldown_hours: 48
+    
+  scheduled_battles:
+    enabled: true
+    public: true
+    required_phase: 2
+    
+  siege_warfare:
+    enabled: false
+    public: true
+    required_phase: 3
+  
+  # Economic Systems
+  resource_generation:
+    enabled: true
+    public: true
+    required_phase: 2
+    
+  resource_trading:
+    enabled: false
+    public: true
+    required_phase: 3
+    
+  market_system:
+    enabled: false
+    public: true
+    required_phase: 3
+  
+  # Espionage Systems
+  basic_espionage:
+    enabled: false
+    public: true
+    required_phase: 3
+    
+  counter_intelligence:
+    enabled: false
+    public: true
+    required_phase: 3
+    
+  sabotage:
+    enabled: false
+    public: true
+    required_phase: 3
+  
+  # Political Systems
+  elections:
+    enabled: false
+    public: true
+    required_phase: 3
+    
+  voting_system:
+    enabled: false
+    public: true
+    required_phase: 3
+    
+  impeachment:
+    enabled: false
+    public: true
+    required_phase: 3
+  
+  # Season Systems
+  seasonal_resets:
+    enabled: false
+    public: true
+    required_phase: 4
+    
+  legacy_rewards:
+    enabled: false
+    public: true
+    required_phase: 4
+  
+  # Monetization
+  premium_subscriptions:
+    enabled: false
+    public: true
+    required_phase: 5
+    
+  cosmetic_customization:
+    enabled: false
+    public: true
+    required_phase: 5
+    
+  premium_analytics:
+    enabled: false
+    public: true
+    required_phase: 5
+  
+  # Admin & Debug
+  admin_commands:
+    enabled: true
+    public: false
+    required_phase: 1
+    
+  debug_mode:
+    enabled: true
+    public: false
+    required_phase: 1
+```
+
+FEATURE FLAG CHECKING IN CODE:
+
+```python
+from bot.utils.features import is_feature_enabled
+
+@commands.command()
+async def build_units(ctx, unit_type, quantity):
+    if not is_feature_enabled('military_building'):
+        await ctx.send("This feature is not yet available.")
+        return
+    
+    # Command implementation
+    ...
+```
+
+ADMIN COMMANDS FOR FEATURE CONTROL:
+
+/admin_enable_feature <feature_name>
+- Enables a specific feature
+- Updates config file or database
+- Broadcasts change to all servers
+
+/admin_disable_feature <feature_name>
+- Disables a specific feature
+- Gracefully handles in-progress operations
+- Notifies affected users
+
+/admin_list_features [filter]
+- Lists all features and their status
+- Filter: all, enabled, disabled, phase_2, phase_3, etc.
+
+/admin_feature_status <feature_name>
+- Shows detailed info about a feature
+- Usage statistics
+- Current state
+- Dependencies
+
+================================================================================
+3. GAME BALANCE CONFIGURATION
+================================================================================
+
+ALL GAME BALANCE VALUES IN config/game_balance.yaml:
+
+```yaml
+# Resource System
+resources:
+  base_generation_per_citizen_per_hour: 100
+  storage_max_base: 10000
+  storage_upgrade_cost: 5000
+  storage_upgrade_increase: 5000
+  contribution_cooldown_hours: 4
+  contribution_base_amount: 50
+
+# Military System
+military:
+  units:
+    infantry:
+      cost: 100
+      build_time_minutes: 30
+      strength: 10
+      upkeep_per_hour: 1
+      
+    armor:
+      cost: 500
+      build_time_minutes: 120
+      strength: 100
+      upkeep_per_hour: 10
+      
+    aircraft:
+      cost: 1000
+      build_time_minutes: 240
+      strength: 250
+      upkeep_per_hour: 25
+      
+    naval:
+      cost: 1500
+      build_time_minutes: 360
+      strength: 400
+      upkeep_per_hour: 40
+      enabled: false
+  
+  max_military_size_base: 1000
+  military_size_per_territory: 10
+  unit_build_queue_max: 5
+
+# War System
+war:
+  declaration_cooldown_hours: 48
+  preparation_time_hours: 24
+  battle_duration_minutes: 60
+  peace_treaty_duration_hours: 72
+  surrender_penalty_resources: 0.3
+  surrender_penalty_territory: 0.2
+  
+  # Battle calculations
+  strength_variance_percent: 15
+  terrain_bonus_defender: 0.1
+  alliance_support_max_percent: 0.2
+  
+  # War outcomes
+  winner_resource_gain_percent: 0.2
+  winner_territory_gain_percent: 0.1
+  loser_resource_loss_percent: 0.3
+  loser_territory_loss_percent: 0.15
+  loser_military_loss_percent: 0.4
+
+# Alliance System
+alliances:
+  max_alliances_per_nation: 3
+  formation_cooldown_hours: 12
+  break_cooldown_hours: 24
+  betrayal_reputation_penalty: -50
+  loyalty_bonus_per_week: 5
+  alliance_war_support_percent: 0.15
+
+# Economy System
+economy:
+  trade_enabled: false
+  trade_tax_percent: 5
+  market_listing_cost: 100
+  market_transaction_fee_percent: 3
+  loan_interest_rate_daily: 0.02
+  loan_max_amount: 50000
+  loan_default_penalty: 0.5
+
+# Espionage System
+espionage:
+  mission_cooldown_hours: 8
+  base_success_rate: 0.5
+  counter_intel_bonus: 0.2
+  discovery_reputation_penalty: -25
+  
+  missions:
+    reconnaissance:
+      cost: 500
+      duration_hours: 2
+      success_rate_modifier: 0.1
+      
+    sabotage:
+      cost: 2000
+      duration_hours: 6
+      success_rate_modifier: -0.2
+      damage_percent: 0.1
+      
+    steal_resources:
+      cost: 1500
+      duration_hours: 4
+      success_rate_modifier: 0
+      steal_percent: 0.05
+
+# Political System
+politics:
+  election_frequency_days: 14
+  election_campaign_days: 3
+  term_length_days: 14
+  impeachment_vote_threshold: 0.66
+  vote_weight_by_contribution: true
+  leadership_bonus_resource_generation: 0.05
+
+# Season System
+seasons:
+  length_days: 60
+  pre_season_registration_days: 7
+  post_season_review_days: 3
+  mid_season_event_frequency_days: 10
+  
+  legacy_rewards:
+    top_1_percent_reward: 1000
+    top_5_percent_reward: 500
+    top_10_percent_reward: 250
+    participation_reward: 50
+
+# Leaderboard System
+leaderboards:
+  update_frequency_minutes: 15
+  cache_duration_minutes: 5
+  
+  power_calculation:
+    resources_weight: 0.3
+    military_weight: 0.4
+    territory_weight: 0.2
+    population_weight: 0.1
+
+# Progression System
+progression:
+  new_nation_protection_hours: 48
+  new_nation_starting_resources: 1000
+  new_nation_starting_territory: 100
+  new_nation_resource_bonus: 0.5
+  
+  territory_capture_difficulty_scaling: 1.2
+  resource_generation_scaling: 1.1
+  military_cost_scaling: 0.95
+```
+
+ADMIN COMMANDS FOR BALANCE ADJUSTMENT:
+
+/admin_set_balance <key> <value>
+Example: /admin_set_balance military.units.infantry.cost 150
+- Updates configuration value
+- Validates input
+- Logs change with reason
+- Can require confirmation for major changes
+
+/admin_get_balance <key>
+- Displays current value
+- Shows when it was last changed
+- Shows default value
+
+/admin_reset_balance <key>
+- Resets value to default
+- Requires confirmation
+
+/admin_export_balance
+- Exports current balance configuration
+- Useful for backups or sharing
+
+/admin_import_balance <file>
+- Imports balance configuration
+- Useful for seasonal variations or testing
+
+================================================================================
+4. COMMAND PERMISSION SYSTEM
+================================================================================
+
+PERMISSION LEVELS:
+
+1. DEVELOPER (Bot Owner)
+   - Full access to all commands
+   - Can modify core configuration
+   - Emergency controls
+
+2. ADMIN (Server Owner or Admins with special role)
+   - Nation management commands
+   - Cannot modify bot configuration
+   - Can manage nation-specific settings
+
+3. LEADER (Nation Leader)
+   - Strategic decisions (war, alliances, building)
+   - Cannot transfer without succession system
+   - Leadership commands
+
+4. CITIZEN (Registered Users)
+   - Contribution commands
+   - Viewing commands
+   - Voting and participation
+
+5. GUEST (Unregistered Users)
+   - Read-only commands
+   - Help and information
+   - Registration commands
+
+PERMISSION CONFIGURATION (config/permissions.yaml):
+
+```yaml
+permissions:
+  # Developer-only commands (checked by Discord user ID)
+  developer:
+    users:
+      - 123456789012345678  # Bot owner Discord ID
+    commands:
+      - admin_*
+      - debug_*
+      - config_*
+      - emergency_*
+  
+  # Server admin commands (Discord server owner or specific role)
+  admin:
+    requires_server_owner: true
+    allowed_role_names:
+      - "Nation Admin"
+      - "Server Admin"
+    commands:
+      - nation_register
+      - nation_delete
+      - nation_settings
+      - leader_appoint
+  
+  # Nation leader commands
+  leader:
+    requires_role: "Nation Leader"
+    commands:
+      - war_declare
+      - alliance_propose
+      - alliance_break
+      - military_build
+      - leader_announce
+      - leader_dashboard
+  
+  # Citizen commands (registered users)
+  citizen:
+    requires_registration: true
+    commands:
+      - contribute
+      - vote
+      - citizen_info
+      - resources
+      - military_status
+  
+  # Guest commands (anyone)
+  guest:
+    commands:
+      - help
+      - guide
+      - leaderboard
+      - nation_info
+      - citizen_register
+      - tutorial
+```
+
+PERMISSION CHECKING IN CODE:
+
+```python
+from bot.utils.permissions import has_permission
+
+@commands.command()
+async def declare_war(ctx, target_nation):
+    if not has_permission(ctx.author, ctx.guild, 'leader'):
+        await ctx.send("Only the nation leader can declare war.")
+        return
+    
+    # Command implementation
+    ...
+```
+
+================================================================================
+5. TIMER & COOLDOWN CONFIGURATION
+================================================================================
+
+ALL TIMERS CONFIGURABLE (config/timers.yaml):
+
+```yaml
+timers:
+  # Resource generation
+  resource_generation_interval_minutes: 60
+  resource_generation_check_interval_minutes: 5
+  
+  # Military
+  unit_production_check_interval_minutes: 10
+  military_upkeep_interval_hours: 24
+  
+  # War system
+  war_preparation_hours: 24
+  war_declaration_cooldown_hours: 48
+  battle_execution_time_utc: "20:00"  # 8 PM UTC
+  peace_treaty_duration_hours: 72
+  
+  # Alliances
+  alliance_cooldown_hours: 12
+  alliance_break_cooldown_hours: 24
+  
+  # Espionage
+  espionage_mission_cooldown_hours: 8
+  espionage_mission_check_interval_minutes: 30
+  
+  # Elections
+  election_frequency_days: 14
+  election_campaign_duration_days: 3
+  voting_period_hours: 48
+  
+  # Leaderboards
+  leaderboard_update_interval_minutes: 15
+  statistics_calculation_interval_hours: 1
+  
+  # Seasons
+  season_length_days: 60
+  pre_season_registration_days: 7
+  season_end_warning_days: 7
+  
+  # Maintenance
+  database_cleanup_interval_days: 7
+  inactive_nation_check_interval_days: 1
+  cache_cleanup_interval_hours: 6
+```
+
+ADMIN COMMANDS FOR TIMER CONTROL:
+
+/admin_set_timer <key> <value>
+Example: /admin_set_timer war_preparation_hours 12
+- Adjusts timer value
+- Validates input (can't set negative values)
+- Updates scheduled tasks if necessary
+
+/admin_trigger_event <event_name>
+Example: /admin_trigger_event resource_generation
+- Manually triggers scheduled event
+- Useful for testing
+- Bypasses normal schedule
+
+/admin_next_scheduled <event_name>
+- Shows when event will next run
+- Shows how many times it has run
+- Shows last execution time
+
+================================================================================
+6. PHASED ROLLOUT CONTROL
+================================================================================
+
+PHASE MANAGEMENT (config/rollout.yaml):
+
+```yaml
+rollout:
+  current_phase: 2  # MVP phase
+  
+  phases:
+    phase_1:
+      name: "Foundation"
+      enabled_features:
+        - server_registration
+        - citizen_registration
+        - admin_commands
+        - help_system
+      
+    phase_2:
+      name: "MVP Game Loop"
+      enabled_features:
+        - military_building
+        - alliance_formation
+        - war_declaration
+        - scheduled_battles
+        - resource_generation
+        - leaderboards
+      
+    phase_3:
+      name: "Depth & Engagement"
+      enabled_features:
+        - advanced_units
+        - basic_espionage
+        - resource_trading
+        - elections
+        - voting_system
+        - vassalage
+      
+    phase_4:
+      name: "Seasons & Retention"
+      enabled_features:
+        - seasonal_resets
+        - legacy_rewards
+        - historical_archives
+      
+    phase_5:
+      name: "Monetization"
+      enabled_features:
+        - premium_subscriptions
+        - cosmetic_customization
+        - premium_analytics
+```
+
+ADMIN COMMANDS FOR PHASE CONTROL:
+
+/admin_set_phase <phase_number>
+- Advances to new phase
+- Automatically enables/disables features for that phase
+- Announces phase change to all servers
+- Requires confirmation
+
+/admin_phase_status
+- Shows current phase
+- Lists enabled features
+- Shows phase progress
+
+/admin_preview_phase <phase_number>
+- Shows what features will be enabled
+- Shows what will be disabled
+- No changes made
+
+================================================================================
+7. PER-SERVER CONFIGURATION
+================================================================================
+
+Some settings can be adjusted per-server (for premium servers):
+
+PER-SERVER SETTINGS:
+
+```yaml
+server_specific:
+  # Customization (premium)
+  custom_colors: false
+  custom_emblems: false
+  custom_announcements: false
+  
+  # Visibility (premium)
+  leaderboard_priority: false
+  featured_nation: false
+  
+  # Notifications
+  war_notifications: true
+  alliance_notifications: true
+  leaderboard_change_notifications: false
+  
+  # Preferences
+  battle_time_preference_utc: "20:00"
+  language: "en"
+  timezone: "UTC"
+```
+
+COMMANDS:
+
+/nation_settings (leader only)
+- View current nation settings
+- Modify allowed settings
+
+/nation_set <setting> <value>
+- Change specific setting
+- Premium-only settings require subscription
+
+================================================================================
+8. EMERGENCY CONTROLS
+================================================================================
+
+EMERGENCY ADMIN COMMANDS:
+
+/admin_emergency_stop
+- Halts all scheduled events
+- Disables all user commands except help
+- Emergency mode announcement
+- Use for critical bugs or exploits
+
+/admin_emergency_resume
+- Resumes normal operation
+- Re-enables commands
+- Announces return to normal
+
+/admin_rollback <minutes>
+- Attempts database rollback to previous state
+- Only works if backups are recent
+- Requires confirmation
+- USE WITH EXTREME CAUTION
+
+/admin_disable_command <command_name>
+- Temporarily disables specific command
+- Useful for exploited commands
+- Can re-enable with /admin_enable_command
+
+/admin_maintenance_mode <on|off>
+- Enables maintenance mode
+- Notifies all users
+- Only admin commands work
+- Use for updates or fixes
+
+================================================================================
+9. CONFIGURATION VALIDATION
+================================================================================
+
+VALIDATION RULES:
+
+1. Type Checking
+   - Integers, floats, strings, booleans must match expected types
+   - Arrays and objects validated against schema
+
+2. Range Checking
+   - Percentages between 0 and 1
+   - Cooldowns minimum 1 hour (prevent abuse)
+   - Costs minimum 1 resource
+
+3. Dependency Checking
+   - Cannot enable feature without dependencies
+   - Example: Cannot enable advanced_units without military_building
+
+4. Balance Checking
+   - Warn if values seem unbalanced
+   - Example: Unit cost < 10 or > 10000
+
+5. Conflict Checking
+   - Incompatible features cannot both be enabled
+   - Example: Cannot have both fixed_leaders and elections
+
+ADMIN COMMANDS FOR VALIDATION:
+
+/admin_validate_config
+- Checks entire configuration
+- Reports errors and warnings
+- Suggests fixes
+
+/admin_config_backup
+- Creates backup of current configuration
+- Stores with timestamp
+- Can restore later
+
+/admin_config_restore <backup_id>
+- Restores from backup
+- Shows diff before applying
+- Requires confirmation
+
+================================================================================
+10. CONFIGURATION CHANGE LOGGING
+================================================================================
+
+ALL CONFIGURATION CHANGES LOGGED:
+
+Log Entry Structure:
+- Timestamp
+- Admin user who made change
+- Configuration key changed
+- Old value
+- New value
+- Reason (if provided)
+- Impact assessment
+
+ADMIN COMMANDS:
+
+/admin_config_history [key]
+- Shows change history for configuration
+- Filter by specific key if provided
+- Shows who changed what when
+
+/admin_config_audit
+- Full audit report of all changes
+- Exportable for review
+- Shows recent changes first
+
+================================================================================
+END OF CONFIGURABILITY SYSTEM DOCUMENT
+================================================================================

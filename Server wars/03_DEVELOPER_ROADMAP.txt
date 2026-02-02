@@ -1,0 +1,1108 @@
+================================================================================
+SERVER WARS: DOMINION PROTOCOL - DEVELOPER ROADMAP
+================================================================================
+
+This is a complete step-by-step guide from zero to deployment.
+Follow this sequentially to build the entire project.
+
+================================================================================
+PART 1: PRE-DEVELOPMENT SETUP
+================================================================================
+
+STEP 1: INSTALL REQUIRED SOFTWARE
+----------------------------------
+□ Python 3.10 or higher
+  - Download from python.org
+  - Verify: python --version
+  - Add to PATH during installation
+
+□ Code Editor / IDE
+  - Recommended: VS Code (with Python extension)
+  - Alternative: PyCharm Community Edition
+  - Install Python linter (pylint or flake8)
+
+□ Git Version Control
+  - Download from git-scm.com
+  - Configure: git config --global user.name "Your Name"
+  - Configure: git config --global user.email "your@email.com"
+  - Create GitHub/GitLab account if needed
+
+□ PostgreSQL Database
+  - Download from postgresql.org (version 14+)
+  - During install, note the password you set
+  - Install pgAdmin 4 for visual management
+  - Verify: psql --version
+
+□ Redis (for caching and sessions)
+  - Windows: Download from redis.io or use WSL
+  - Linux/Mac: Install via package manager
+  - Verify: redis-cli --version
+
+□ Discord Account Setup
+  - Create Discord account if needed
+  - Enable Developer Mode: User Settings > Advanced > Developer Mode
+
+STEP 2: CREATE DISCORD BOT APPLICATION
+---------------------------------------
+□ Go to Discord Developer Portal (discord.com/developers/applications)
+
+□ Create New Application
+  - Click "New Application"
+  - Name: "Server Wars: Dominion Protocol" (or your preferred name)
+  - Accept terms
+
+□ Configure Bot Settings
+  - Go to "Bot" tab
+  - Click "Add Bot"
+  - Set username and icon
+  - IMPORTANT: Copy bot token (keep this SECRET)
+  - Enable "Message Content Intent"
+  - Enable "Server Members Intent"
+  - Enable "Presence Intent"
+
+□ Configure OAuth2
+  - Go to "OAuth2" tab
+  - Under "Scopes", select: bot, applications.commands
+  - Under "Bot Permissions", select:
+    * Read Messages/View Channels
+    * Send Messages
+    * Embed Links
+    * Attach Files
+    * Read Message History
+    * Add Reactions
+    * Use Slash Commands
+  - Copy the generated URL (for inviting bot to servers)
+
+□ Save Bot Token Securely
+  - Create a password manager entry or secure note
+  - NEVER commit this to git
+  - You'll need this in Step 6
+
+STEP 3: SET UP DEVELOPMENT ENVIRONMENT
+---------------------------------------
+□ Create Project Directory
+  - mkdir server-wars-bot
+  - cd server-wars-bot
+
+□ Initialize Git Repository
+  - git init
+  - Create .gitignore file (see below for contents)
+
+□ Create Python Virtual Environment
+  - python -m venv venv
+  - Activate:
+    * Windows: venv\Scripts\activate
+    * Linux/Mac: source venv/bin/activate
+  - Verify: which python (should show venv path)
+
+□ Create .gitignore File
+  Add these lines:
+  ```
+  venv/
+  __pycache__/
+  *.pyc
+  .env
+  config/secrets.yaml
+  *.log
+  .DS_Store
+  .vscode/
+  *.db
+  *.sqlite
+  node_modules/
+  ```
+
+STEP 4: INSTALL PYTHON DEPENDENCIES
+------------------------------------
+□ Create requirements.txt with these packages:
+  ```
+  discord.py>=2.3.0
+  python-dotenv>=1.0.0
+  psycopg2-binary>=2.9.0
+  redis>=5.0.0
+  pyyaml>=6.0.0
+  aiohttp>=3.9.0
+  APScheduler>=3.10.0
+  python-dateutil>=2.8.0
+  ```
+
+□ Install dependencies:
+  - pip install -r requirements.txt
+  - pip list (verify all installed)
+
+□ Create requirements-dev.txt for development tools:
+  ```
+  pytest>=7.4.0
+  pytest-asyncio>=0.21.0
+  black>=23.7.0
+  flake8>=6.0.0
+  mypy>=1.4.0
+  ```
+
+□ Install dev dependencies:
+  - pip install -r requirements-dev.txt
+
+STEP 5: SET UP DATABASE
+------------------------
+□ Create PostgreSQL Database
+  - Open pgAdmin or use command line
+  - Create new database: "serverwars"
+  - Note: database name, username, password, host, port
+
+□ Test Connection
+  - psql -U postgres -d serverwars
+  - If successful, you're connected
+  - Exit: \q
+
+□ Create Database User (optional but recommended)
+  - CREATE USER serverwars_user WITH PASSWORD 'your_secure_password';
+  - GRANT ALL PRIVILEGES ON DATABASE serverwars TO serverwars_user;
+
+□ Set Up Redis
+  - Start Redis server: redis-server
+  - Test: redis-cli ping (should return PONG)
+  - Configure Redis to start on boot (optional)
+
+STEP 6: CREATE CONFIGURATION SYSTEM
+------------------------------------
+□ Create Directory Structure
+  server-wars-bot/
+  ├── bot/
+  │   ├── __init__.py
+  │   ├── main.py
+  │   ├── cogs/
+  │   ├── database/
+  │   ├── utils/
+  │   └── config/
+  ├── config/
+  │   ├── config.yaml
+  │   ├── secrets.yaml (git-ignored)
+  │   └── features.yaml
+  ├── tests/
+  ├── docs/
+  └── scripts/
+
+□ Create .env File (for environment variables)
+  Add:
+  ```
+  DISCORD_TOKEN=your_bot_token_here
+  DATABASE_URL=postgresql://user:password@localhost:5432/serverwars
+  REDIS_URL=redis://localhost:6379
+  ENVIRONMENT=development
+  LOG_LEVEL=DEBUG
+  ```
+
+□ Create config/config.yaml
+  This will contain game configuration (see Part 2)
+
+□ Create config/secrets.yaml.example
+  Template for secrets (actual secrets.yaml is git-ignored)
+
+STEP 7: SET UP LOGGING
+-----------------------
+□ Create logs/ Directory
+  - mkdir logs
+  - Add to .gitignore
+
+□ Configure Python Logging
+  Will be implemented in bot/utils/logger.py
+  - Console logging for development
+  - File logging for production
+  - Rotation to prevent huge files
+  - Different levels: DEBUG, INFO, WARNING, ERROR
+
+STEP 8: VERSION CONTROL SETUP
+------------------------------
+□ Create Initial Commit
+  - git add .
+  - git commit -m "Initial project setup"
+
+□ Create GitHub/GitLab Repository
+  - Create new repository (private recommended)
+  - git remote add origin <repository_url>
+  - git push -u origin main
+
+□ Create Branches
+  - git checkout -b development (for active development)
+  - Keep main/master for stable releases
+
+================================================================================
+PART 2: PHASE 1 DEVELOPMENT (FOUNDATION)
+================================================================================
+
+STEP 9: CREATE BOT FOUNDATION
+------------------------------
+□ Implement bot/main.py (basic bot structure)
+  - Initialize Discord bot
+  - Load environment variables
+  - Set up event handlers
+  - Command registration system
+  - Error handling
+
+□ Implement bot/utils/logger.py
+  - Logging configuration
+  - Log formatting
+  - File and console handlers
+
+□ Implement bot/utils/config.py
+  - Load YAML configuration
+  - Environment variable handling
+  - Config validation
+
+□ Test Bot Connection
+  - python bot/main.py
+  - Bot should come online in Discord
+  - Check logs for errors
+
+STEP 10: DATABASE SCHEMA DESIGN
+--------------------------------
+□ Design Database Tables (see detailed schema below)
+  Core tables needed:
+  - servers (nation data)
+  - users (citizen data)
+  - resources (server resources)
+  - military (military units)
+  - alliances (diplomatic relationships)
+  - wars (war states)
+  - battles (battle history)
+  - events (game events)
+  - transactions (economy)
+  - config (game configuration)
+
+□ Create Migration System
+  - Use Alembic or custom migration scripts
+  - Track schema versions
+
+□ Implement bot/database/models.py
+  - SQLAlchemy models or custom ORM
+  - Table definitions
+
+□ Implement bot/database/connection.py
+  - Database connection pooling
+  - Async database operations
+  - Connection retry logic
+
+STEP 11: IMPLEMENT CONFIGURATION SYSTEM
+----------------------------------------
+□ Create config/config.yaml Structure
+  ```yaml
+  bot:
+    prefix: "/"
+    status_message: "Server Wars: Dominion Protocol"
+    max_servers: 1000
+    
+  game:
+    season_length_days: 60
+    max_alliances_per_server: 3
+    war_cooldown_hours: 48
+    
+  features:
+    commands:
+      admin: true
+      registration: true
+      war: false
+      diplomacy: false
+      economy: false
+      espionage: false
+    
+  resources:
+    generation_rate: 100
+    max_storage: 10000
+    
+  military:
+    unit_types:
+      - soldier
+      - tank
+      - aircraft
+  ```
+
+□ Create Feature Flag System
+  - Enable/disable features without code changes
+  - Per-command control
+  - Phase-based rollout support
+
+□ Implement bot/utils/features.py
+  - Feature flag checking
+  - Command availability control
+  - Admin override system
+
+STEP 12: ADMIN COMMAND FRAMEWORK
+---------------------------------
+□ Implement bot/cogs/admin.py
+  Admin commands for developer:
+  - /admin_status (bot health check)
+  - /admin_reload_config (reload configuration)
+  - /admin_enable_feature <feature>
+  - /admin_disable_feature <feature>
+  - /admin_set_config <key> <value>
+  - /admin_backup_database
+  - /admin_clear_cache
+  - /admin_shutdown (graceful shutdown)
+
+□ Implement Permission System
+  - Only bot owner can use admin commands
+  - Check Discord user ID against config
+  - Log all admin actions
+
+□ Test Admin Commands
+  - Invite bot to test server
+  - Run each admin command
+  - Verify logs and functionality
+
+STEP 13: HELP SYSTEM FOUNDATION
+--------------------------------
+□ Implement bot/cogs/help.py
+  - /help (general help overview)
+  - /help <command> (specific command help)
+  - /guide (game overview and getting started)
+  - Dynamic help based on enabled features
+
+□ Create Help Content Structure
+  - Embed formatting for Discord
+  - Command descriptions
+  - Usage examples
+  - Links to documentation
+
+STEP 14: ERROR HANDLING & LOGGING
+----------------------------------
+□ Implement Global Error Handler
+  - Catch all command errors
+  - Log errors with context
+  - User-friendly error messages
+  - Developer notifications for critical errors
+
+□ Implement bot/utils/errors.py
+  - Custom exception classes
+  - Error response formatting
+  - Rate limit handling
+  - Graceful degradation
+
+□ Set Up Monitoring
+  - Bot uptime tracking
+  - Error rate monitoring
+  - Performance metrics
+  - Database connection health
+
+STEP 15: TESTING FRAMEWORK
+---------------------------
+□ Create tests/ Directory Structure
+  tests/
+  ├── unit/
+  ├── integration/
+  └── test_data/
+
+□ Implement Basic Tests
+  - Test configuration loading
+  - Test database connections
+  - Test command registration
+  - Test error handling
+
+□ Run Tests
+  - pytest tests/
+  - Fix any failing tests
+  - Aim for 80%+ code coverage
+
+STEP 16: PHASE 1 COMPLETION CHECKLIST
+--------------------------------------
+Before moving to Phase 2, verify:
+□ Bot stays online consistently (24+ hours)
+□ Database connections are stable
+□ Configuration system works (can change settings without code)
+□ Admin commands all functional
+□ Logging captures all important events
+□ Error handling prevents crashes
+□ Tests pass
+□ Documentation is up to date
+□ Git repository is organized and current
+
+================================================================================
+PART 3: PHASE 2 DEVELOPMENT (MVP GAME LOOP)
+================================================================================
+
+STEP 17: SERVER REGISTRATION SYSTEM
+------------------------------------
+□ Design Server/Nation Data Model
+  - Server ID (Discord server ID)
+  - Nation name
+  - Leader (Discord user ID)
+  - Creation timestamp
+  - Resources
+  - Military strength
+  - Territory
+  - Status (active, inactive, destroyed)
+
+□ Implement bot/cogs/registration.py
+  Commands:
+  - /nation_register <name> (register server as nation)
+  - /nation_info (view nation details)
+  - /nation_rename <new_name> (rename nation)
+  - /citizen_register (register as citizen)
+  - /citizen_info [user] (view citizen info)
+
+□ Implement Validation
+  - Prevent duplicate registrations
+  - Name validation (length, characters)
+  - Permission checks (who can register nation)
+  - Rate limiting
+
+□ Test Registration Flow
+  - Register multiple test servers
+  - Verify database entries
+  - Test edge cases and errors
+
+STEP 18: LEADERSHIP SYSTEM (BASIC)
+-----------------------------------
+□ Implement Leadership Assignment
+  - Automatic: Server owner becomes leader
+  - /nation_appoint_leader <user> (transfer leadership)
+  - Leadership permissions system
+
+□ Implement Leader Commands
+  - /leader_dashboard (view nation overview)
+  - /leader_announce <message> (broadcast to citizens)
+  - Leader-only command restrictions
+
+□ Track Leadership History
+  - Who was leader when
+  - Reason for change
+  - Leadership stability metrics
+
+STEP 19: RESOURCE SYSTEM
+-------------------------
+□ Implement Resource Generation
+  - Base generation rate per citizen
+  - Passive generation over time
+  - Resource storage limits
+
+□ Implement Resource Commands
+  - /resources (view current resources)
+  - /contribute (citizens contribute to nation)
+  - /resource_history (view generation history)
+
+□ Implement Resource Database Tables
+  - Current resource amounts
+  - Generation rates
+  - Transaction history
+
+□ Create Resource Generation Scheduler
+  - Use APScheduler for periodic generation
+  - Update resources every hour/day
+  - Log generation events
+
+STEP 20: MILITARY SYSTEM (BASIC)
+---------------------------------
+□ Implement Unit Types
+  - Basic units: Infantry, Armor, Air Force
+  - Unit costs in resources
+  - Unit strength values
+
+□ Implement Military Commands
+  - /military_build <unit_type> <quantity>
+  - /military_status (view current military)
+  - /military_disband <unit_type> <quantity>
+
+□ Implement Military Database Tables
+  - Unit counts per nation
+  - Unit types and stats
+  - Construction queue
+
+□ Validate Military Actions
+  - Check resource availability
+  - Enforce build times
+  - Limit military size based on nation strength
+
+STEP 21: ALLIANCE SYSTEM (BASIC)
+---------------------------------
+□ Implement Alliance Formation
+  - /alliance_propose <nation>
+  - /alliance_accept <nation>
+  - /alliance_break <nation>
+  - /alliances (view all alliances)
+
+□ Implement Alliance Data Model
+  - Alliance ID
+  - Member nations
+  - Formation date
+  - Alliance status
+
+□ Implement Alliance Rules
+  - Max alliances per nation (configurable)
+  - Cooldowns on alliance changes
+  - Betrayal tracking
+
+STEP 22: WAR SYSTEM (BASIC)
+----------------------------
+□ Implement War Declaration
+  - /war_declare <nation> (declare war)
+  - /war_accept <nation> (accept war)
+  - /war_decline <nation> (decline war)
+  - /wars (view active wars)
+
+□ Implement War States
+  - Proposed (waiting for acceptance)
+  - Preparation (building up forces)
+  - Active (battle phase)
+  - Concluded (results determined)
+
+□ Implement War Database Tables
+  - War ID
+  - Aggressor and defender
+  - Start and end dates
+  - War status
+  - Outcome
+
+□ Implement War Rules
+  - Cannot declare war on allies
+  - War cooldowns
+  - Preparation time before battle
+  - War impact on resources and territory
+
+STEP 23: COMBAT SYSTEM (SIMPLE)
+--------------------------------
+□ Implement Battle Calculation
+  - Compare military strengths
+  - Factor in unit types
+  - Random variance (±10-20%)
+  - Clear winner determination
+
+□ Implement Scheduled Battles
+  - War declaration → preparation period → battle
+  - Scheduled battle time (announced in advance)
+  - Automated battle resolution
+  - Battle results posted to both servers
+
+□ Implement Battle Commands
+  - /battle_info <war_id> (view battle details)
+  - /battle_history (view past battles)
+
+□ Implement Battle Outcomes
+  - Winner gains territory/resources
+  - Loser loses territory/resources
+  - Peace terms
+  - Update leaderboards
+
+STEP 24: LEADERBOARD SYSTEM
+----------------------------
+□ Implement Leaderboard Calculations
+  - Power ranking (military + resources + territory)
+  - Military strength ranking
+  - Economic strength ranking
+  - Territory ranking
+
+□ Implement Leaderboard Commands
+  - /leaderboard [type] (view rankings)
+  - /rank (view own nation's rank)
+  - /compare <nation> (compare two nations)
+
+□ Implement Leaderboard Updates
+  - Update after major events (wars, alliances)
+  - Periodic recalculation
+  - Cache for performance
+
+□ Implement Leaderboard Display
+  - Top 10/25/50 nations
+  - Visual formatting with emojis
+  - Color coding for tiers
+  - Trend indicators (↑↓→)
+
+STEP 25: STATISTICS & HISTORY
+------------------------------
+□ Implement Nation Statistics
+  - Total wars fought
+  - Win/loss record
+  - Resources generated
+  - Citizens count
+  - Age of nation
+
+□ Implement Statistics Commands
+  - /stats [nation] (view nation statistics)
+  - /history [nation] (view nation history)
+  - /war_record [nation] (view war history)
+
+□ Implement Event Logging
+  - All major events recorded
+  - Queryable history
+  - Public vs private events
+
+STEP 26: ONBOARDING & TUTORIAL
+-------------------------------
+□ Implement Tutorial System
+  - /tutorial (interactive tutorial)
+  - First-time user detection
+  - Step-by-step guidance
+  - Practice commands
+
+□ Create Tutorial Content
+  - How to register
+  - How to contribute resources
+  - How the military works
+  - How to form alliances
+  - How wars work
+
+□ Implement Getting Started Guide
+  - /guide_leader (for server leaders)
+  - /guide_citizen (for regular citizens)
+  - /guide_war (for warfare mechanics)
+  - /guide_diplomacy (for diplomatic actions)
+
+STEP 27: PHASE 2 TESTING
+-------------------------
+□ Alpha Testing Setup
+  - Recruit 5-10 test servers
+  - Create testing documentation
+  - Set up feedback channels
+
+□ Functional Testing
+  - Test complete game loop
+  - Register multiple nations
+  - Form alliances
+  - Declare and fight wars
+  - Verify leaderboards update
+
+□ Balance Testing
+  - Are wars fair?
+  - Is resource generation balanced?
+  - Are unit costs appropriate?
+  - Is progression too fast/slow?
+
+□ Stress Testing
+  - Multiple simultaneous wars
+  - Large number of commands in short time
+  - Database performance under load
+
+□ Bug Fixes
+  - Fix all critical bugs
+  - Document known minor bugs
+  - Create bug tracking system
+
+STEP 28: PHASE 2 COMPLETION CHECKLIST
+--------------------------------------
+□ Complete game loop functional
+□ 5+ servers actively testing
+□ Core mechanics balanced
+□ No critical bugs
+□ Positive tester feedback
+□ Performance acceptable
+□ Database stable
+□ Documentation updated
+
+================================================================================
+PART 4: HOSTING & DEPLOYMENT
+================================================================================
+
+STEP 29: CHOOSE HOSTING PLATFORM
+---------------------------------
+Options (choose one):
+
+Option A: VPS (DigitalOcean, Linode, Vultr)
+  Pros: Full control, predictable pricing
+  Cons: Requires more setup and maintenance
+  Recommended specs: 2 CPU, 4GB RAM, 50GB SSD
+
+Option B: Cloud Platform (AWS, Google Cloud, Azure)
+  Pros: Scalable, managed services
+  Cons: Complex pricing, can get expensive
+  Recommended: Use managed database + compute instance
+
+Option C: Heroku
+  Pros: Easy deployment, managed infrastructure
+  Cons: More expensive, less control
+  Recommended: Hobby tier initially
+
+Recommendation for this project: VPS (DigitalOcean)
+- Cost effective ($20-40/month)
+- Good performance
+- Easy to manage
+- Can scale later
+
+STEP 30: SERVER SETUP
+----------------------
+□ Create Server Instance
+  - Choose Ubuntu 22.04 LTS
+  - Select appropriate size (2GB+ RAM)
+  - Set up SSH keys
+  - Configure firewall
+
+□ Secure Server
+  - Update packages: apt update && apt upgrade
+  - Create non-root user
+  - Configure SSH (disable password auth)
+  - Set up firewall (ufw)
+  - Install fail2ban
+
+□ Install Server Software
+  - Python 3.10+: apt install python3.10 python3-pip
+  - PostgreSQL: apt install postgresql postgresql-contrib
+  - Redis: apt install redis-server
+  - Nginx (optional, for metrics dashboard)
+  - Git: apt install git
+
+STEP 31: DEPLOY DATABASE
+-------------------------
+□ Set Up PostgreSQL
+  - Create database: createdb serverwars
+  - Create user: createuser serverwars_user
+  - Set password and permissions
+  - Configure postgresql.conf for performance
+  - Enable remote connections if needed
+
+□ Run Database Migrations
+  - Copy migration scripts to server
+  - Run migrations
+  - Verify schema
+
+□ Set Up Database Backups
+  - Configure automated backups (pg_dump)
+  - Store backups off-server
+  - Test backup restoration
+
+□ Configure Redis
+  - Set up Redis password
+  - Configure persistence
+  - Set memory limits
+  - Enable Redis to start on boot
+
+STEP 32: DEPLOY BOT CODE
+-------------------------
+□ Clone Repository
+  - git clone <repository_url>
+  - Set up deploy keys if private repo
+
+□ Set Up Python Environment
+  - Create virtual environment
+  - Install dependencies
+  - Configure environment variables
+
+□ Configure Production Settings
+  - Create production .env file
+  - Set LOG_LEVEL=INFO
+  - Set ENVIRONMENT=production
+  - Configure database URLs
+
+□ Test Bot on Server
+  - Run bot manually first
+  - Verify database connection
+  - Check logs for errors
+  - Test basic commands
+
+STEP 33: SET UP PROCESS MANAGEMENT
+-----------------------------------
+□ Create Systemd Service
+  Create /etc/systemd/system/serverwars-bot.service:
+  ```
+  [Unit]
+  Description=Server Wars Discord Bot
+  After=network.target postgresql.service redis.service
+
+  [Service]
+  Type=simple
+  User=serverwars
+  WorkingDirectory=/home/serverwars/server-wars-bot
+  Environment="PATH=/home/serverwars/server-wars-bot/venv/bin"
+  ExecStart=/home/serverwars/server-wars-bot/venv/bin/python bot/main.py
+  Restart=always
+  RestartSec=10
+
+  [Install]
+  WantedBy=multi-user.target
+  ```
+
+□ Enable and Start Service
+  - systemctl enable serverwars-bot
+  - systemctl start serverwars-bot
+  - systemctl status serverwars-bot
+
+□ Configure Log Rotation
+  - Set up logrotate for bot logs
+  - Prevent logs from filling disk
+
+STEP 34: MONITORING & ALERTING
+-------------------------------
+□ Set Up Health Checks
+  - Bot uptime monitoring
+  - Database connection checks
+  - Disk space monitoring
+  - Memory usage tracking
+
+□ Configure Alerting
+  - Email alerts for critical errors
+  - Discord webhook for status updates
+  - Uptime monitoring service (UptimeRobot)
+
+□ Set Up Metrics Dashboard (Optional)
+  - Prometheus + Grafana
+  - Track command usage
+  - Track user growth
+  - Track system resources
+
+STEP 35: DEPLOYMENT WORKFLOW
+-----------------------------
+□ Create Deployment Script
+  Script to:
+  - Pull latest code
+  - Run tests
+  - Run migrations
+  - Restart service
+  - Verify health
+
+□ Set Up CI/CD (Optional but Recommended)
+  - GitHub Actions or GitLab CI
+  - Automated testing on push
+  - Automated deployment to server
+  - Rollback capability
+
+□ Document Deployment Process
+  - Step-by-step deployment guide
+  - Rollback procedures
+  - Emergency response plan
+
+================================================================================
+PART 5: MAINTENANCE & OPERATIONS
+================================================================================
+
+STEP 36: MONITORING ROUTINE
+----------------------------
+Daily:
+□ Check bot uptime
+□ Review error logs
+□ Monitor server resources
+
+Weekly:
+□ Review user feedback
+□ Analyze usage statistics
+□ Check database performance
+□ Update dependencies if needed
+
+Monthly:
+□ Review and rotate logs
+□ Database optimization
+□ Backup verification
+□ Security updates
+
+STEP 37: UPDATE WORKFLOW
+-------------------------
+For Bug Fixes:
+1. Create hotfix branch
+2. Fix bug and test locally
+3. Deploy to production
+4. Monitor for issues
+5. Merge to main branch
+
+For New Features:
+1. Develop on feature branch
+2. Test thoroughly locally
+3. Deploy to staging (if available)
+4. Test with alpha testers
+5. Deploy to production gradually
+6. Monitor feedback and metrics
+
+STEP 38: BACKUP & DISASTER RECOVERY
+------------------------------------
+□ Automated Backups
+  - Daily database backups
+  - Weekly full server snapshots
+  - Off-site backup storage
+  - 30-day backup retention
+
+□ Recovery Procedures
+  - Document restoration steps
+  - Test recovery quarterly
+  - Maintain backup server credentials
+
+□ Data Export Capability
+  - Allow users to export their data
+  - Comply with data regulations
+
+STEP 39: SCALING PREPARATION
+-----------------------------
+When bot grows to 100+ servers:
+
+□ Database Optimization
+  - Add indexes for common queries
+  - Implement connection pooling
+  - Consider read replicas
+
+□ Caching Strategy
+  - Cache leaderboards
+  - Cache nation data
+  - Use Redis effectively
+
+□ Rate Limiting
+  - Implement per-user rate limits
+  - Prevent spam and abuse
+  - Graceful rate limit handling
+
+□ Sharding (if needed)
+  - Discord.py sharding support
+  - Split bot across multiple processes
+  - Load balancing
+
+STEP 40: COMMUNITY MANAGEMENT
+------------------------------
+□ Set Up Support Systems
+  - Support Discord server
+  - Bug report system
+  - Feature request tracking
+
+□ Create Documentation
+  - User guide wiki
+  - FAQ document
+  - Video tutorials (optional)
+
+□ Engage Community
+  - Regular updates
+  - Community events
+  - Feedback sessions
+
+================================================================================
+DETAILED DATABASE SCHEMA
+================================================================================
+
+SERVERS TABLE:
+--------------
+CREATE TABLE servers (
+    server_id BIGINT PRIMARY KEY,
+    nation_name VARCHAR(100) NOT NULL,
+    leader_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resources INTEGER DEFAULT 1000,
+    territory INTEGER DEFAULT 100,
+    population INTEGER DEFAULT 0,
+    military_strength INTEGER DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'active',
+    last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+USERS TABLE:
+------------
+CREATE TABLE users (
+    user_id BIGINT PRIMARY KEY,
+    server_id BIGINT REFERENCES servers(server_id),
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    contribution_points INTEGER DEFAULT 0,
+    last_contribution TIMESTAMP,
+    role VARCHAR(50) DEFAULT 'citizen'
+);
+
+MILITARY TABLE:
+---------------
+CREATE TABLE military (
+    id SERIAL PRIMARY KEY,
+    server_id BIGINT REFERENCES servers(server_id),
+    unit_type VARCHAR(50) NOT NULL,
+    quantity INTEGER NOT NULL,
+    strength_value INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALLIANCES TABLE:
+----------------
+CREATE TABLE alliances (
+    id SERIAL PRIMARY KEY,
+    server_id_1 BIGINT REFERENCES servers(server_id),
+    server_id_2 BIGINT REFERENCES servers(server_id),
+    formed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'active',
+    broken_at TIMESTAMP,
+    broken_by BIGINT
+);
+
+WARS TABLE:
+-----------
+CREATE TABLE wars (
+    id SERIAL PRIMARY KEY,
+    aggressor_id BIGINT REFERENCES servers(server_id),
+    defender_id BIGINT REFERENCES servers(server_id),
+    declared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    battle_time TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'proposed',
+    winner_id BIGINT,
+    concluded_at TIMESTAMP
+);
+
+BATTLES TABLE:
+--------------
+CREATE TABLE battles (
+    id SERIAL PRIMARY KEY,
+    war_id INTEGER REFERENCES wars(id),
+    aggressor_strength INTEGER NOT NULL,
+    defender_strength INTEGER NOT NULL,
+    aggressor_losses INTEGER DEFAULT 0,
+    defender_losses INTEGER DEFAULT 0,
+    winner_id BIGINT,
+    fought_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    battle_log TEXT
+);
+
+EVENTS TABLE:
+-------------
+CREATE TABLE events (
+    id SERIAL PRIMARY KEY,
+    event_type VARCHAR(50) NOT NULL,
+    server_id BIGINT REFERENCES servers(server_id),
+    event_data JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_public BOOLEAN DEFAULT true
+);
+
+LEADERBOARD TABLE:
+------------------
+CREATE TABLE leaderboard (
+    id SERIAL PRIMARY KEY,
+    server_id BIGINT REFERENCES servers(server_id),
+    rank_type VARCHAR(50) NOT NULL,
+    rank_value INTEGER NOT NULL,
+    rank_position INTEGER,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CONFIG TABLE:
+-------------
+CREATE TABLE config (
+    key VARCHAR(100) PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_by BIGINT
+);
+
+================================================================================
+KEY CONFIGURATION VALUES
+================================================================================
+
+Game Balance Configuration:
+
+resource_generation_rate: 100 per hour per citizen
+resource_storage_max: 10000 (upgradeable)
+war_cooldown_hours: 48 (cannot declare war if recently fought)
+war_preparation_hours: 24 (time before battle after declaration)
+alliance_cooldown_hours: 12 (time before can change alliances)
+max_alliances: 3 (maximum concurrent alliances)
+
+Unit Costs and Strength:
+infantry_cost: 100 resources
+infantry_strength: 10
+armor_cost: 500 resources
+armor_strength: 100
+aircraft_cost: 1000 resources
+aircraft_strength: 250
+
+Battle Mechanics:
+strength_variance: 0.15 (±15% random factor)
+winner_resource_gain: 20% of loser's resources
+loser_resource_loss: 30% of total resources
+winner_territory_gain: 10% of loser's territory
+
+Season Configuration:
+season_length_days: 60
+reset_date: First Monday of every other month
+legacy_reward_threshold: Top 10% of nations
+
+================================================================================
+END OF DEVELOPER ROADMAP
+================================================================================
+
+This roadmap should be followed sequentially. Each step builds on previous steps.
+Do not skip ahead or you may encounter issues.
+
+Estimated timeline: 4-6 months for complete implementation to Phase 5.
+
+Good luck, and remember: Start small, test thoroughly, iterate based on feedback.

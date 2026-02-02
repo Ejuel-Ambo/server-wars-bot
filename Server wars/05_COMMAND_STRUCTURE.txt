@@ -1,0 +1,969 @@
+================================================================================
+SERVER WARS: DOMINION PROTOCOL - COMPLETE COMMAND STRUCTURE
+================================================================================
+
+This document lists ALL commands organized by category, with descriptions,
+synergies, and strategic purpose. Every command must contribute to game loop.
+
+================================================================================
+COMMAND DESIGN PRINCIPLES
+================================================================================
+
+1. PURPOSE: Every command has clear strategic value
+2. SYNERGY: Commands interact and create strategic depth
+3. NO DEAD COMMANDS: No novelty or pointless commands
+4. CLARITY: Commands are intuitive and well-documented
+5. BALANCE: Commands are balanced for fair gameplay
+
+================================================================================
+CATEGORY 1: REGISTRATION & ONBOARDING
+================================================================================
+
+/nation_register <nation_name>
+Permission: Server Admin
+Purpose: Register Discord server as a nation
+Effect: Creates nation in database, sets leader, grants starting resources
+Synergies: Enables all other nation commands
+Phase: 1 (Foundation)
+
+/nation_info [nation_name]
+Permission: Guest
+Purpose: View detailed information about a nation
+Shows: Name, leader, resources, territory, military, alliances, wars
+Synergies: Intelligence gathering, target selection
+Phase: 1
+
+/nation_rename <new_name>
+Permission: Leader
+Purpose: Change nation name
+Cooldown: 30 days
+Cost: 1000 resources
+Phase: 2
+
+/citizen_register
+Permission: Guest
+Purpose: Register as a citizen of the server's nation
+Effect: Enables contribution and participation
+Synergies: Unlocks citizen commands, increases nation population
+Phase: 1
+
+/citizen_info [user]
+Permission: Guest
+Purpose: View citizen statistics and contributions
+Shows: Join date, contributions, rank, voting record
+Synergies: Leadership selection, recognition
+Phase: 1
+
+/tutorial
+Permission: Guest
+Purpose: Interactive tutorial for new players
+Effect: Guides through basic commands and concepts
+Synergies: Improves retention and understanding
+Phase: 2
+
+/guide_leader
+Permission: Leader
+Purpose: Strategic guide for nation leaders
+Shows: Leadership strategies, command priorities, tips
+Phase: 2
+
+/guide_citizen
+Permission: Citizen
+Purpose: Guide for citizens on how to contribute
+Shows: Contribution strategies, progression path
+Phase: 2
+
+/guide_war
+Permission: Citizen
+Purpose: Detailed war mechanics guide
+Shows: How wars work, battle calculations, strategies
+Phase: 2
+
+/guide_diplomacy
+Permission: Citizen
+Purpose: Diplomatic system guide
+Shows: Alliances, treaties, reputation mechanics
+Phase: 2
+
+================================================================================
+CATEGORY 2: LEADERSHIP & GOVERNANCE
+================================================================================
+
+/leader_dashboard
+Permission: Leader
+Purpose: Comprehensive overview of nation status
+Shows: Resources, military, active wars, alliances, threats
+Synergies: Central command hub for leaders
+Phase: 2
+
+/leader_announce <message>
+Permission: Leader
+Purpose: Send announcement to all citizens
+Effect: Pings citizens or sends to dedicated channel
+Cooldown: 6 hours (prevent spam)
+Phase: 2
+
+/leader_appoint <user>
+Permission: Leader or Admin
+Purpose: Transfer leadership to another citizen
+Effect: Changes leader, updates permissions
+Cooldown: 48 hours (prevent abuse)
+Phase: 2
+
+/leader_delegate <role> <user>
+Permission: Leader
+Purpose: Grant special roles (military commander, diplomat, etc.)
+Effect: Gives limited command access to trusted citizens
+Phase: 3
+
+/election_start
+Permission: Leader or Citizens (with petition)
+Purpose: Begin election for new leader
+Effect: Opens candidate registration period
+Requirements: Phase 3, elections enabled
+Phase: 3
+
+/election_nominate <user>
+Permission: Citizen
+Purpose: Nominate candidate for leadership
+Requirements: During nomination period
+Phase: 3
+
+/election_vote <candidate>
+Permission: Citizen
+Purpose: Vote for leader candidate
+Effect: Casts vote (weighted by contribution)
+Phase: 3
+
+/impeachment_start <reason>
+Permission: Citizens (requires petition of 25% population)
+Purpose: Begin impeachment vote against leader
+Effect: Opens impeachment voting period
+Phase: 3
+
+/impeachment_vote <yes|no>
+Permission: Citizen
+Purpose: Vote on impeachment
+Requirements: 66% yes votes to remove leader
+Phase: 3
+
+/proposal_create <title> <description>
+Permission: Citizen
+Purpose: Create proposal for nation vote
+Examples: War strategy, alliance formation, resource allocation
+Phase: 3
+
+/proposal_vote <proposal_id> <yes|no>
+Permission: Citizen
+Purpose: Vote on citizen proposal
+Effect: If passed, leader must consider or face consequences
+Phase: 3
+
+================================================================================
+CATEGORY 3: RESOURCE MANAGEMENT
+================================================================================
+
+/resources
+Permission: Citizen
+Purpose: View nation's current resources
+Shows: Total resources, generation rate, storage capacity, expenses
+Synergies: Planning military builds, war readiness assessment
+Phase: 2
+
+/contribute
+Permission: Citizen
+Purpose: Contribute personal resources to nation
+Effect: Increases national resources, earns contribution points
+Cooldown: 4 hours
+Reward: Reputation, potential rewards, voting weight
+Synergies: Resource generation, citizen engagement
+Phase: 2
+
+/contribution_leaderboard
+Permission: Citizen
+Purpose: View top contributors in the nation
+Shows: Top 10 contributors, their points, recognition
+Synergies: Competition, motivation, leadership selection
+Phase: 2
+
+/resource_history
+Permission: Citizen
+Purpose: View resource generation and spending history
+Shows: Last 24 hours of transactions
+Synergies: Accountability, planning
+Phase: 2
+
+/storage_upgrade
+Permission: Leader
+Purpose: Increase resource storage capacity
+Cost: Scales with current capacity
+Effect: Allows storing more resources
+Synergies: Long-term growth strategy
+Phase: 2
+
+/resource_allocate <category> <amount>
+Permission: Leader
+Purpose: Allocate resources to military, economy, or research
+Effect: Boosts selected category efficiency
+Synergies: Strategic specialization
+Phase: 3
+
+/trade_propose <nation> <give_resources> <receive_resources>
+Permission: Leader
+Purpose: Propose resource trade with another nation
+Cooldown: 12 hours
+Phase: 3
+
+/trade_accept <trade_id>
+Permission: Leader
+Purpose: Accept incoming trade proposal
+Effect: Exchanges resources
+Phase: 3
+
+/market_list <resource_amount> <price>
+Permission: Leader
+Purpose: List resources on global market
+Cost: Listing fee
+Phase: 3
+
+/market_buy <listing_id>
+Permission: Leader
+Purpose: Purchase resources from market
+Effect: Transfer resources, pay price
+Phase: 3
+
+/market_view [filter]
+Permission: Citizen
+Purpose: View available market listings
+Shows: Resources for sale, prices, sellers
+Phase: 3
+
+================================================================================
+CATEGORY 4: MILITARY SYSTEMS
+================================================================================
+
+/military_status
+Permission: Citizen
+Purpose: View nation's military strength
+Shows: Unit counts, total strength, upkeep costs, build queue
+Synergies: War planning, target assessment
+Phase: 2
+
+/military_build <unit_type> <quantity>
+Permission: Leader
+Purpose: Build military units
+Cost: Resources per unit
+Effect: Adds units to build queue, completes over time
+Synergies: War preparation, deterrence
+Phase: 2
+Unit Types: infantry, armor, aircraft, naval
+
+/military_disband <unit_type> <quantity>
+Permission: Leader
+Purpose: Disband military units
+Effect: Removes units, recovers 25% of cost
+Reason: Reduce upkeep, reallocate resources
+Phase: 2
+
+/military_queue
+Permission: Citizen
+Purpose: View current build queue
+Shows: Units being built, completion times
+Phase: 2
+
+/military_upgrade <unit_type>
+Permission: Leader
+Purpose: Upgrade unit type (increases strength)
+Cost: Research + resources
+Effect: All units of type become stronger
+Phase: 3
+
+/military_composition
+Permission: Leader
+Purpose: View recommended unit composition
+Shows: Analysis of current military balance
+Suggests: Improvements based on threats
+Phase: 3
+
+/military_compare <nation>
+Permission: Citizen
+Purpose: Compare military strength with another nation
+Shows: Strength comparison, unit breakdown, estimated outcome
+Synergies: War planning, alliance selection
+Phase: 2
+
+/fortify
+Permission: Leader
+Purpose: Increase defensive strength temporarily
+Cost: Resources
+Duration: Until next battle
+Effect: +15% defensive bonus
+Phase: 3
+
+/mobilize
+Permission: Leader
+Purpose: Increase military recruitment speed
+Cost: Resources
+Duration: 48 hours
+Effect: Units build 50% faster
+Phase: 3
+
+================================================================================
+CATEGORY 5: WARFARE & COMBAT
+================================================================================
+
+/war_declare <nation> [reason]
+Permission: Leader
+Purpose: Declare war on another nation
+Effect: Starts war process, sets battle time
+Restrictions: Cannot target allies, cooldown applies
+Synergies: Territory expansion, resource capture, rivalry
+Phase: 2
+
+/war_accept <nation>
+Permission: Leader
+Purpose: Accept war declaration
+Effect: Confirms war, finalizes battle time
+Alternative: Auto-accepts after 12 hours
+Phase: 2
+
+/war_decline <nation> [reason]
+Permission: Leader
+Purpose: Decline war declaration
+Effect: Rejects war, but reputation impact
+Restrictions: Can only decline if much weaker
+Phase: 2
+
+/wars
+Permission: Citizen
+Purpose: View all active wars
+Shows: All current wars, participants, scheduled battles
+Synergies: Global situation awareness
+Phase: 2
+
+/war_info <war_id>
+Permission: Citizen
+Purpose: View detailed war information
+Shows: Participants, strength comparison, battle time, stakes
+Phase: 2
+
+/war_support <nation>
+Permission: Leader
+Purpose: Support allied nation in their war
+Requirements: Must be allied
+Effect: Contributes 15% of military to ally's battle
+Phase: 2
+
+/battle_prepare
+Permission: Leader
+Purpose: Set battle stance and strategy
+Options: Aggressive, defensive, balanced
+Effect: Modifies battle calculations slightly
+Phase: 3
+
+/battle_history
+Permission: Citizen
+Purpose: View past battles
+Shows: Recent battles, outcomes, casualties
+Synergies: Pattern analysis, strategy development
+Phase: 2
+
+/peace_propose <nation> [terms]
+Permission: Leader
+Purpose: Propose peace treaty to end war
+Terms: Resource payments, territory, etc.
+Phase: 2
+
+/peace_accept <war_id>
+Permission: Leader
+Purpose: Accept peace proposal
+Effect: Ends war, enforces terms
+Phase: 2
+
+/surrender <war_id>
+Permission: Leader
+Purpose: Surrender in active war
+Effect: Immediate end, heavy penalties
+Penalties: -30% resources, -20% territory, reputation loss
+Phase: 2
+
+/war_predict <nation>
+Permission: Citizen
+Purpose: Simulate potential war outcome
+Shows: Estimated battle results based on current military
+Synergies: Decision making, risk assessment
+Phase: 2
+
+/siege_start <nation>
+Permission: Leader
+Purpose: Begin siege warfare (prolonged conflict)
+Requirements: Advanced warfare enabled
+Effect: Different battle mechanics, territory focus
+Phase: 3
+
+================================================================================
+CATEGORY 6: DIPLOMACY & ALLIANCES
+================================================================================
+
+/alliance_propose <nation>
+Permission: Leader
+Purpose: Propose alliance with another nation
+Effect: Sends alliance invitation
+Synergies: Mutual defense, trade, coordination
+Phase: 2
+
+/alliance_accept <nation>
+Permission: Leader
+Purpose: Accept alliance proposal
+Effect: Forms alliance, enables cooperation
+Phase: 2
+
+/alliance_decline <nation> [reason]
+Permission: Leader
+Purpose: Decline alliance proposal
+Effect: Rejects alliance politely
+Phase: 2
+
+/alliance_break <nation> [reason]
+Permission: Leader
+Purpose: End alliance with nation
+Effect: Breaks alliance, reputation penalty
+Cooldown: 24 hours before can war
+Reputation: -25 betrayal score
+Phase: 2
+
+/alliances
+Permission: Citizen
+Purpose: View all alliances (global or own nation)
+Shows: Alliance network, formation dates, stability
+Synergies: Political landscape analysis
+Phase: 2
+
+/alliance_chat <message>
+Permission: Leader
+Purpose: Send message to allied leaders
+Effect: Private communication channel
+Phase: 2
+
+/pact_propose <nation> <pact_type>
+Permission: Leader
+Purpose: Propose diplomatic pact
+Types: Non-aggression, trade, mutual defense, vassalage
+Phase: 3
+
+/pact_accept <pact_id>
+Permission: Leader
+Purpose: Accept diplomatic pact
+Effect: Establishes agreement
+Phase: 3
+
+/vassalize_offer <nation>
+Permission: Leader
+Purpose: Offer vassalage to smaller nation
+Effect: Weaker nation becomes vassal (protection + tribute)
+Requirements: Must be significantly stronger
+Phase: 3
+
+/vassalize_accept
+Permission: Leader
+Purpose: Accept vassalage offer
+Effect: Become vassal, gain protection, pay tribute
+Phase: 3
+
+/independence_declare
+Permission: Leader (of vassal nation)
+Purpose: Declare independence from overlord
+Effect: Breaks vassalage, likely triggers war
+Phase: 3
+
+/embassy_establish <nation>
+Permission: Leader
+Purpose: Establish embassy for better relations
+Cost: 2000 resources
+Effect: +10 reputation, intelligence bonus
+Phase: 3
+
+/embassy_list
+Permission: Citizen
+Purpose: View established embassies
+Shows: Nations with embassies, benefits
+Phase: 3
+
+/reputation_view [nation]
+Permission: Citizen
+Purpose: View reputation scores
+Shows: How other nations view specified nation
+Includes: Betrayal history, treaty adherence
+Phase: 2
+
+/diplomat_send <nation> <message>
+Permission: Leader
+Purpose: Send formal diplomatic message
+Effect: Opens communication, logged publicly
+Phase: 2
+
+================================================================================
+CATEGORY 7: ESPIONAGE & INTELLIGENCE
+================================================================================
+
+/spy_recruit
+Permission: Leader
+Purpose: Recruit spy agents
+Cost: 1000 resources per spy
+Effect: Increases espionage capacity
+Phase: 3
+
+/spy_mission <nation> <mission_type>
+Permission: Leader
+Purpose: Conduct espionage mission
+Types: reconnaissance, sabotage, steal_resources, counter_intel
+Cost: Varies by mission
+Success Rate: Based on spies, counter-intel, luck
+Phase: 3
+
+/reconnaissance <nation>
+Permission: Leader (requires spy)
+Purpose: Gather intelligence on nation
+Effect: Reveals military strength, resources estimate, alliances
+Success Rate: 70%
+Phase: 3
+
+/sabotage <nation> <target>
+Permission: Leader (requires spy)
+Purpose: Sabotage enemy infrastructure
+Targets: Military production, resources, defenses
+Effect: Reduces target efficiency by 10-20%
+Success Rate: 50%
+Discovery Risk: High (reputation penalty if caught)
+Phase: 3
+
+/steal_resources <nation>
+Permission: Leader (requires spy)
+Purpose: Steal resources from nation
+Effect: Steals 5% of target's resources
+Success Rate: 55%
+Phase: 3
+
+/counter_intelligence
+Permission: Leader
+Purpose: Invest in counter-espionage
+Cost: 1500 resources
+Duration: 7 days
+Effect: +20% spy detection, -20% enemy success rate
+Phase: 3
+
+/spy_reports
+Permission: Leader
+Purpose: View recent espionage reports
+Shows: Completed missions, intel gathered, discoveries
+Phase: 3
+
+/intelligence_share <ally_nation> <intel_id>
+Permission: Leader
+Purpose: Share intelligence with ally
+Effect: Provides intel to allied nation
+Synergies: Alliance coordination
+Phase: 3
+
+================================================================================
+CATEGORY 8: ECONOMY & TRADE
+================================================================================
+
+/economy_status
+Permission: Citizen
+Purpose: View economic overview
+Shows: Income, expenses, trade balance, market activity
+Phase: 3
+
+/invest <sector> <amount>
+Permission: Leader
+Purpose: Invest in economic sector
+Sectors: Agriculture, industry, technology, military
+Effect: Increases sector efficiency over time
+ROI: 10% over 7 days
+Phase: 3
+
+/tax_rate <percentage>
+Permission: Leader
+Purpose: Set citizen contribution requirements
+Range: 0-50% (recommended 10-20%)
+Effect: Impacts citizen satisfaction vs income
+Phase: 3
+
+/economic_policy <policy>
+Permission: Leader
+Purpose: Set economic policy
+Policies: Growth, balanced, militaristic, isolationist
+Effect: Modifies resource generation and costs
+Phase: 3
+
+/loan_request <amount>
+Permission: Leader
+Purpose: Request loan from global bank
+Max: 50,000 resources
+Interest: 2% daily
+Duration: 30 days
+Phase: 3
+
+/loan_repay <amount>
+Permission: Leader
+Purpose: Repay outstanding loan
+Effect: Reduces debt, improves credit rating
+Phase: 3
+
+/subsidy_request
+Permission: Leader
+Purpose: Request resource subsidy for weak nations
+Requirements: Low resources, no recent wars
+Effect: Grants small resource boost
+Phase: 3
+
+================================================================================
+CATEGORY 9: LEADERBOARDS & RANKINGS
+================================================================================
+
+/leaderboard [type]
+Permission: Guest
+Purpose: View global leaderboards
+Types: power, military, economy, territory, reputation
+Shows: Top 25 nations with scores
+Synergies: Competition, target selection, motivation
+Phase: 2
+
+/rank [nation]
+Permission: Guest
+Purpose: View specific nation's ranks
+Shows: Position in all leaderboard categories
+Synergies: Progress tracking
+Phase: 2
+
+/compare <nation1> <nation2>
+Permission: Citizen
+Purpose: Compare two nations across all metrics
+Shows: Side-by-side comparison
+Synergies: Alliance selection, war target assessment
+Phase: 2
+
+/statistics [nation]
+Permission: Guest
+Purpose: View detailed statistics
+Shows: Wars fought, W/L ratio, age, resources generated
+Phase: 2
+
+/history [nation]
+Permission: Guest
+Purpose: View nation history timeline
+Shows: Major events, wars, alliances, leader changes
+Phase: 2
+
+/legacy
+Permission: Citizen
+Purpose: View legacy achievements and rewards
+Shows: Past season placements, rewards earned
+Phase: 4
+
+/hall_of_fame
+Permission: Guest
+Purpose: View all-time greatest nations and leaders
+Shows: Historical records, legendary moments
+Phase: 4
+
+/achievements [user]
+Permission: Citizen
+Purpose: View personal achievements
+Shows: Unlocked achievements, progress on others
+Phase: 3
+
+================================================================================
+CATEGORY 10: SEASON & EVENTS
+================================================================================
+
+/season_info
+Permission: Guest
+Purpose: View current season information
+Shows: Season number, theme, days remaining, top nations
+Phase: 4
+
+/season_register
+Permission: Admin
+Purpose: Register for upcoming season
+Requirements: During pre-season period
+Effect: Reserves spot in new season
+Phase: 4
+
+/season_history
+Permission: Guest
+Purpose: View past seasons
+Shows: Winners, themes, major events
+Phase: 4
+
+/event_current
+Permission: Guest
+Purpose: View active global events
+Shows: Special events, bonuses, challenges
+Phase: 3
+
+/event_participate
+Permission: Leader
+Purpose: Participate in global event
+Effect: Enables nation to compete in event
+Rewards: Based on performance
+Phase: 3
+
+================================================================================
+CATEGORY 11: NOTIFICATIONS & SETTINGS
+================================================================================
+
+/notifications
+Permission: Citizen
+Purpose: View recent notifications
+Shows: Wars, alliances, battles, announcements
+Phase: 2
+
+/notifications_settings
+Permission: Citizen
+Purpose: Configure notification preferences
+Options: DM vs server, which events to notify
+Phase: 2
+
+/nation_settings
+Permission: Leader
+Purpose: Configure nation settings
+Options: Privacy, preferences, display options
+Phase: 2
+
+/timezone_set <timezone>
+Permission: Citizen
+Purpose: Set personal timezone for battle times
+Effect: Shows times in personal timezone
+Phase: 2
+
+/language_set <language>
+Permission: Citizen
+Purpose: Set bot language (if multi-language support added)
+Options: en, es, fr, de, etc.
+Phase: 6
+
+================================================================================
+CATEGORY 12: HELP & INFORMATION
+================================================================================
+
+/help [command]
+Permission: Guest
+Purpose: Get help on commands
+Shows: Command list or specific command help
+Phase: 1
+
+/commands [category]
+Permission: Guest
+Purpose: List all available commands
+Filter: By category or permission level
+Phase: 1
+
+/faq
+Permission: Guest
+Purpose: View frequently asked questions
+Shows: Common questions and answers
+Phase: 2
+
+/report_bug <description>
+Permission: Citizen
+Purpose: Report bug to developers
+Effect: Creates bug report ticket
+Phase: 2
+
+/suggest_feature <description>
+Permission: Citizen
+Purpose: Suggest new feature
+Effect: Creates feature request
+Phase: 2
+
+/about
+Permission: Guest
+Purpose: View bot information
+Shows: Version, credits, links, server count
+Phase: 1
+
+/invite
+Permission: Guest
+Purpose: Get bot invite link
+Shows: Link to add bot to new servers
+Phase: 2
+
+/support
+Permission: Guest
+Purpose: Get support server link
+Shows: Link to join support Discord
+Phase: 1
+
+/changelog
+Permission: Guest
+Purpose: View recent updates
+Shows: Recent changes, new features, bug fixes
+Phase: 2
+
+================================================================================
+CATEGORY 13: ADMIN & DEVELOPER COMMANDS
+================================================================================
+
+/admin_status
+Permission: Developer
+Purpose: View bot health and status
+Shows: Uptime, server count, database status, errors
+Phase: 1
+
+/admin_reload_config
+Permission: Developer
+Purpose: Reload configuration without restart
+Effect: Reloads config files
+Phase: 1
+
+/admin_enable_feature <feature>
+Permission: Developer
+Purpose: Enable specific feature
+Effect: Activates feature globally
+Phase: 1
+
+/admin_disable_feature <feature>
+Permission: Developer
+Purpose: Disable specific feature
+Effect: Deactivates feature globally
+Phase: 1
+
+/admin_set_config <key> <value>
+Permission: Developer
+Purpose: Modify configuration value
+Effect: Updates config in database
+Phase: 1
+
+/admin_backup_database
+Permission: Developer
+Purpose: Trigger manual database backup
+Effect: Creates backup snapshot
+Phase: 1
+
+/admin_clear_cache
+Permission: Developer
+Purpose: Clear Redis cache
+Effect: Forces recalculation of cached data
+Phase: 1
+
+/admin_shutdown [reason]
+Permission: Developer
+Purpose: Gracefully shut down bot
+Effect: Saves state, notifies users, shuts down
+Phase: 1
+
+/admin_restart
+Permission: Developer
+Purpose: Restart bot
+Effect: Graceful restart with state preservation
+Phase: 1
+
+/admin_announce <message>
+Permission: Developer
+Purpose: Send announcement to all servers
+Effect: Posts message to all registered nations
+Phase: 1
+
+/admin_grant_resources <nation> <amount>
+Permission: Developer
+Purpose: Grant resources to nation (testing/compensation)
+Effect: Adds resources
+Logged: Yes (for accountability)
+Phase: 1
+
+/admin_simulate_battle <nation1> <nation2>
+Permission: Developer
+Purpose: Simulate battle for testing
+Effect: Runs battle calculation without affecting game
+Phase: 2
+
+/admin_force_event <event_type>
+Permission: Developer
+Purpose: Manually trigger scheduled event
+Effect: Runs event immediately
+Phase: 1
+
+/admin_set_phase <phase_number>
+Permission: Developer
+Purpose: Change current game phase
+Effect: Enables/disables features for that phase
+Phase: 1
+
+/admin_list_nations [filter]
+Permission: Developer
+Purpose: List all registered nations
+Filter: active, inactive, all
+Shows: Nation details, statistics
+Phase: 1
+
+/admin_delete_nation <nation>
+Permission: Developer
+Purpose: Delete nation (use with caution)
+Effect: Removes nation from game
+Requires: Confirmation
+Phase: 1
+
+/admin_ban_server <server_id> [reason]
+Permission: Developer
+Purpose: Ban server from using bot
+Effect: Prevents server from participating
+Phase: 1
+
+/admin_emergency_stop
+Permission: Developer
+Purpose: Emergency halt of all operations
+Effect: Disables all commands except admin
+Phase: 1
+
+/debug_mode <on|off>
+Permission: Developer
+Purpose: Toggle debug mode
+Effect: Verbose logging, debug output
+Phase: 1
+
+================================================================================
+COMMAND SYNERGIES MAP
+================================================================================
+
+RESOURCE SYNERGY CHAIN:
+/citizen_register → /contribute → /resources → /military_build → /war_declare
+
+DIPLOMATIC SYNERGY CHAIN:
+/nation_info → /alliance_propose → /alliance_accept → /war_support
+
+WAR SYNERGY CHAIN:
+/military_compare → /war_predict → /war_declare → /battle_prepare
+
+ESPIONAGE SYNERGY CHAIN:
+/spy_recruit → /reconnaissance → /spy_mission → /war_declare
+
+ECONOMIC SYNERGY CHAIN:
+/invest → /economy_status → /trade_propose → /market_list
+
+POLITICAL SYNERGY CHAIN:
+/contribute → /proposal_create → /proposal_vote → /election_nominate
+
+COMPETITIVE SYNERGY CHAIN:
+/leaderboard → /compare → /military_build → /war_declare → /rank
+
+================================================================================
+COMMAND COUNT BY PHASE
+================================================================================
+
+Phase 1 (Foundation): 28 commands
+Phase 2 (MVP): 65 commands total (37 new)
+Phase 3 (Depth): 115 commands total (50 new)
+Phase 4 (Seasons): 125 commands total (10 new)
+Phase 5 (Monetization): 130 commands total (5 new)
+Phase 6 (Polish): 135 commands total (5 new)
+
+Total Commands: 135+
+
+Admin Commands: 25+
+User Commands: 110+
+
+================================================================================
+END OF COMMAND STRUCTURE
+================================================================================

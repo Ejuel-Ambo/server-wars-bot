@@ -1,0 +1,170 @@
+================================================================================
+SERVER WARS: DOMINION PROTOCOL - PROJECT OVERVIEW
+================================================================================
+Phase: Preparation (Phase 0)
+Last Updated: 2026-01-26
+Status: Planning Phase - No Implementation Yet
+
+================================================================================
+1. CORE CONCEPT (LOCKED)
+================================================================================
+
+Project Type: Multi-Server Discord Bot Game
+Genre: Persistent Global Simulation / Grand Strategy
+Scale: Cross-server competitive gameplay
+
+Core Mechanics:
+- Each Discord server = One Nation/Faction
+- Server members = Citizens of that nation
+- Shared global world where all servers interact
+- Competition through: War, Diplomacy, Espionage, Economy, Politics
+- Scheduled conflicts (not spam-based)
+- Long-term progression with seasonal resets
+
+Key Differentiators:
+- NOT a card game bot
+- NOT anime-focused
+- Inter-server rivalry is the core hook
+- Community coordination required
+- Persistent world with consequences
+- Strategic depth over mechanical complexity
+
+================================================================================
+2. CORE PILLARS (DESIGN PRINCIPLES)
+================================================================================
+
+Pillar 1: INTER-SERVER RIVALRY
+- Servers must have reasons to compete
+- Visible rankings and achievements
+- Public victories and defeats
+- Drama and conflict drive engagement
+
+Pillar 2: COMMUNITY COORDINATION
+- Individual actions contribute to server success
+- Leadership roles with meaningful power
+- Citizens must work together strategically
+- Internal politics and succession systems
+
+Pillar 3: SCHEDULED CONFLICT
+- Wars have preparation, execution, and resolution phases
+- Cooldowns prevent spam and burnout
+- Time zones considered in major events
+- Clear windows for action
+
+Pillar 4: LONG-TERM PROGRESSION
+- Seasonal resets with legacy rewards
+- Persistent reputation and history
+- Server identity carries across seasons
+- Statistics and achievements tracked
+
+================================================================================
+3. STRATEGIC INPUTS (STAKEHOLDER PERSPECTIVES)
+================================================================================
+
+GALE (Integrator - Scope & Viability):
+- Keep scope controlled and achievable
+- Solve "empty world problem" early (need critical mass)
+- Prioritize MVP depth over feature breadth
+- Incremental rollout strategy
+
+ODIN (Logic & Stability - Systems Design):
+- Succession mechanics for leadership continuity
+- Anti-abuse systems for alliances (prevent mega-alliances)
+- Ensure monetization is visibly non-pay-to-win
+- Balanced progression and power curves
+
+LOKI (Growth & Monetization - Market Fit):
+- Lean into public conflict and drama for virality
+- Visibility = growth (public leaderboards, war reports)
+- Status-based monetization (cosmetics, titles, prestige)
+- NOT power-based monetization
+
+IRIS (Community & Identity - Player Experience):
+- Players must feel like citizens, not just users
+- Lore, identity, culture, and storytelling matter
+- Seasonal themes with narrative elements
+- Legacy rewards that tell a story
+- Server culture and personality
+
+STATISTICS SAM (Evidence & Reality - Business Model):
+- Server-paid model > individual user-paid
+- Expect 1-3% server conversion rate (realistic)
+- Retention is harder than acquisition
+- Churn prevention is critical
+- Need engagement loops that keep players returning
+
+================================================================================
+4. CONSTRAINTS & BOUNDARIES
+================================================================================
+
+Development Constraints:
+- Single developer (solo development)
+- High system complexity with many interdependencies
+- Need for incremental rollout capability
+- Must be maintainable long-term
+
+Technical Constraints:
+- Discord API limitations and rate limits
+- Must work on mobile AND desktop Discord
+- Database performance at scale
+- Scheduled task reliability
+
+Design Constraints:
+- Command-driven interface (Discord slash commands)
+- Almost all mechanics must be command-accessible
+- No "dead" or novelty commands
+- Every command must synergize with game loop
+
+Phase 0 Constraints:
+- PLANNING ONLY - No implementation yet
+- No over-engineering
+- Documentation must be executable later
+- Focus on clarity and structure
+
+================================================================================
+5. SUCCESS CRITERIA FOR PREPARATION PHASE
+================================================================================
+
+At the end of Phase 0, the developer must have:
+
+✓ Complete project phase breakdown (what to build when)
+✓ Justified development methodology choice
+✓ Step-by-step developer roadmap (tools to deployment)
+✓ Configurability system design (control features post-launch)
+✓ Complete command list with synergies mapped
+✓ Core system architecture plans
+✓ Reworked prize/incentive system
+✓ Clear scope boundaries for each phase
+✓ Risk identification and mitigation strategies
+
+The developer should know:
+- Exactly what to build
+- In what order to build it
+- What to delay for later phases
+- How to scale safely
+- How to control rollout
+
+================================================================================
+6. PROJECT IDENTITY
+================================================================================
+
+Tone: Serious strategy with emergent drama
+Theme: Nations, power, legacy, betrayal, glory
+Feel: Grand strategy meets Discord community game
+Audience: Strategy gamers, community leaders, competitive players
+
+This is NOT:
+- A casual mini-game collection
+- A pay-to-win gacha system
+- A single-server experience
+- A meme bot with game features
+
+This IS:
+- A persistent world with real stakes
+- A community-driven competitive experience
+- A platform for emergent stories
+- A long-term engagement system
+
+================================================================================
+END OF PROJECT OVERVIEW
+================================================================================

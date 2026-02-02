@@ -1,0 +1,814 @@
+================================================================================
+SERVER WARS: DOMINION PROTOCOL - SYSTEM ARCHITECTURE
+================================================================================
+
+This document outlines the technical architecture and core game systems.
+
+================================================================================
+1. TECHNICAL STACK
+================================================================================
+
+PROGRAMMING LANGUAGE: Python 3.10+
+- Async/await support for Discord.py
+- Strong ecosystem for web services
+- Easy to maintain for solo developer
+
+DISCORD LIBRARY: discord.py 2.3+
+- Slash command support
+- Cog system for organization
+- Event handling
+- Async operations
+
+DATABASE: PostgreSQL 14+
+- Relational data with ACID compliance
+- JSON support for flexible data
+- Strong performance
+- Battle-tested reliability
+
+CACHING: Redis 7+
+- Fast in-memory caching
+- Leaderboard storage
+- Session management
+- Rate limiting
+
+TASK SCHEDULING: APScheduler 3.10+
+- Cron-like scheduling
+- Persistent job storage
+- Timezone support
+
+HOSTING: VPS (Recommended: DigitalOcean, Linode, Vultr)
+- Full control
+- Predictable costs
+- Easy to scale
+
+================================================================================
+2. APPLICATION ARCHITECTURE
+================================================================================
+
+LAYERED ARCHITECTURE:
+
+┌─────────────────────────────────────────────┐
+│         DISCORD INTERFACE LAYER             │
+│  (Commands, Events, User Interactions)      │
+└─────────────────┬───────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────┐
+│         COMMAND HANDLER LAYER               │
+│  (Validation, Permissions, Routing)         │
+└─────────────────┬───────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────┐
+│         BUSINESS LOGIC LAYER                │
+│  (Game Mechanics, Calculations, Rules)      │
+└─────────────────┬───────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────┐
+│         DATA ACCESS LAYER                   │
+│  (Database Operations, Caching)             │
+└─────────────────┬───────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────┐
+│         DATABASE & CACHE                    │
+│  (PostgreSQL, Redis)                        │
+└─────────────────────────────────────────────┘
+
+================================================================================
+3. PROJECT DIRECTORY STRUCTURE
+================================================================================
+
+server-wars-bot/
+├── bot/
+│   ├── __init__.py
+│   ├── main.py                    # Bot entry point
+│   │
+│   ├── cogs/                      # Command modules
+│   │   ├── __init__.py
+│   │   ├── admin.py              # Admin commands
+│   │   ├── registration.py       # Nation/citizen registration
+│   │   ├── military.py           # Military commands
+│   │   ├── warfare.py            # War and battle commands
+│   │   ├── diplomacy.py          # Alliance and diplomatic commands
+│   │   ├── economy.py            # Resource and economy commands
+│   │   ├── espionage.py          # Espionage commands
+│   │   ├── politics.py           # Elections and governance
+│   │   ├── leaderboards.py       # Rankings and statistics
+│   │   ├── help.py               # Help and information
+│   │   └── events.py             # Seasonal events
+│   │
+│   ├── systems/                   # Core game systems
+│   │   ├── __init__.py
+│   │   ├── resource_system.py    # Resource generation and management
+│   │   ├── military_system.py    # Military mechanics
+│   │   ├── combat_system.py      # Battle calculations
+│   │   ├── diplomacy_system.py   # Alliance mechanics
+│   │   ├── reputation_system.py  # Reputation tracking
+│   │   ├── election_system.py    # Election mechanics
+│   │   ├── season_system.py      # Seasonal resets
+│   │   └── notification_system.py # Notification management
+│   │
+│   ├── database/                  # Database layer
+│   │   ├── __init__.py
+│   │   ├── connection.py         # Database connection pool
+│   │   ├── models.py             # SQLAlchemy models
+│   │   ├── queries.py            # Common queries
+│   │   └── migrations/           # Database migrations
+│   │
+│   ├── utils/                     # Utility modules
+│   │   ├── __init__.py
+│   │   ├── config.py             # Configuration management
+│   │   ├── logger.py             # Logging setup
+│   │   ├── features.py           # Feature flags
+│   │   ├── permissions.py        # Permission checking
+│   │   ├── validators.py         # Input validation
+│   │   ├── formatters.py         # Discord embed formatting
+│   │   └── errors.py             # Custom exceptions
+│   │
+│   └── schedulers/                # Scheduled tasks
+│       ├── __init__.py
+│       ├── resource_generation.py
+│       ├── battle_scheduler.py
+│       ├── election_scheduler.py
+│       └── maintenance.py
+│
+├── config/                        # Configuration files
+│   ├── config.yaml               # Main configuration
+│   ├── features.yaml             # Feature flags
+│   ├── game_balance.yaml         # Game balance values
+│   ├── timers.yaml               # Timer settings
+│   └── secrets.yaml.example      # Secrets template
+│
+├── tests/                         # Test suite
+│   ├── unit/
+│   ├── integration/
+│   └── test_data/
+│
+├── docs/                          # Documentation
+│   ├── api/
+│   ├── guides/
+│   └── planning/
+│
+├── scripts/                       # Utility scripts
+│   ├── setup_database.py
+│   ├── migrate.py
+│   └── backup.py
+│
+├── logs/                          # Log files (git-ignored)
+│
+├── .env                           # Environment variables (git-ignored)
+├── .gitignore
+├── requirements.txt
+├── requirements-dev.txt
+└── README.md
+
+================================================================================
+4. CORE GAME SYSTEMS (DETAILED)
+================================================================================
+
+SYSTEM 1: RESOURCE SYSTEM
+--------------------------
+Components:
+- Resource generation (passive, per citizen)
+- Resource storage (with capacity limits)
+- Resource spending (military, buildings, actions)
+- Resource trading (between nations)
+
+Key Functions:
+- generate_resources(server_id) -> int
+- get_resource_balance(server_id) -> int
+- spend_resources(server_id, amount, reason) -> bool
+- add_resources(server_id, amount, source) -> bool
+
+Database Tables:
+- servers.resources (current amount)
+- resource_transactions (history)
+
+Scheduled Tasks:
+- Hourly resource generation
+- Daily upkeep costs
+
+SYSTEM 2: MILITARY SYSTEM
+--------------------------
+Components:
+- Unit types (infantry, armor, aircraft, naval)
+- Unit production (build queue)
+- Unit maintenance (upkeep costs)
+- Military strength calculation
+
+Key Functions:
+- build_units(server_id, unit_type, quantity) -> bool
+- get_military_strength(server_id) -> int
+- calculate_military_composition(server_id) -> dict
+- process_build_queue(server_id) -> None
+
+Database Tables:
+- military (unit counts per nation)
+- build_queue (units being constructed)
+
+Scheduled Tasks:
+- Every 10 minutes: Process build queue
+- Daily: Charge military upkeep
+
+SYSTEM 3: COMBAT SYSTEM
+------------------------
+Components:
+- Battle calculation engine
+- Strength comparison
+- Outcome determination
+- Casualty calculation
+- Reward/penalty application
+
+Key Functions:
+- calculate_battle(aggressor_id, defender_id) -> dict
+- determine_winner(aggressor_strength, defender_strength) -> int
+- calculate_casualties(total_strength, loss_percent) -> dict
+- apply_battle_outcome(war_id, winner_id) -> None
+
+Battle Formula:
+```
+base_strength = sum(unit_quantity × unit_strength)
+modifier = terrain_bonus + alliance_support + stance_modifier
+variance = random(-15%, +15%)
+final_strength = base_strength × (1 + modifier) × (1 + variance)
+winner = higher final_strength
+```
+
+Database Tables:
+- wars
+- battles
+- military (updated with casualties)
+
+SYSTEM 4: DIPLOMACY SYSTEM
+---------------------------
+Components:
+- Alliance formation and breaking
+- Diplomatic pacts
+- Reputation tracking
+- Treaty management
+
+Key Functions:
+- form_alliance(server_id_1, server_id_2) -> bool
+- break_alliance(server_id_1, server_id_2, reason) -> None
+- get_alliances(server_id) -> list
+- check_alliance_limit(server_id) -> bool
+
+Database Tables:
+- alliances
+- diplomatic_pacts
+- reputation_scores
+
+Reputation System:
+- Alliance formation: +10
+- Alliance breaking: -25
+- Treaty violation: -50
+- War victory: +5
+- War loss: -5
+- Betrayal: -75
+
+SYSTEM 5: WAR SYSTEM
+---------------------
+Components:
+- War declaration
+- War states (proposed, preparation, active, concluded)
+- Battle scheduling
+- Peace treaty negotiation
+
+Key Functions:
+- declare_war(aggressor_id, defender_id, reason) -> int (war_id)
+- schedule_battle(war_id) -> datetime
+- execute_battle(war_id) -> dict
+- conclude_war(war_id, winner_id) -> None
+
+War Flow:
+1. Declaration → Proposed (12 hours to accept/decline)
+2. Accepted → Preparation (24 hours to build up)
+3. Battle Time → Active (battle executes)
+4. Results → Concluded (apply outcomes)
+
+Database Tables:
+- wars
+- battles
+- war_participants (for multi-nation wars)
+
+SYSTEM 6: ELECTION SYSTEM
+--------------------------
+Components:
+- Candidate nomination
+- Voting mechanism
+- Vote counting (weighted by contribution)
+- Leadership transition
+
+Key Functions:
+- start_election(server_id) -> int (election_id)
+- nominate_candidate(election_id, user_id) -> bool
+- cast_vote(election_id, user_id, candidate_id) -> bool
+- tally_votes(election_id) -> dict
+- transfer_leadership(server_id, new_leader_id) -> None
+
+Election Flow:
+1. Nomination Period (3 days)
+2. Voting Period (2 days)
+3. Results Announcement
+4. Leadership Transfer
+
+Database Tables:
+- elections
+- candidates
+- votes
+- leadership_history
+
+SYSTEM 7: ESPIONAGE SYSTEM
+---------------------------
+Components:
+- Spy recruitment
+- Mission types (reconnaissance, sabotage, theft)
+- Success/failure calculation
+- Discovery and consequences
+
+Key Functions:
+- recruit_spy(server_id) -> bool
+- launch_mission(attacker_id, target_id, mission_type) -> dict
+- calculate_success(attacker_spies, target_counter_intel) -> bool
+- apply_mission_effects(target_id, mission_type, success) -> None
+
+Success Formula:
+```
+base_success_rate = mission.base_rate
+attacker_bonus = attacker_spies × 0.05
+defender_penalty = target_counter_intel × 0.1
+final_rate = base_success_rate + attacker_bonus - defender_penalty
+success = random(0, 1) < final_rate
+```
+
+Database Tables:
+- spies
+- espionage_missions
+- intelligence_reports
+
+SYSTEM 8: ECONOMY & TRADE SYSTEM
+---------------------------------
+Components:
+- Resource trading between nations
+- Global market
+- Loans and debt
+- Economic investments
+
+Key Functions:
+- propose_trade(proposer_id, target_id, offer, request) -> int
+- execute_trade(trade_id) -> bool
+- list_market(server_id, resources, price) -> int
+- purchase_market(buyer_id, listing_id) -> bool
+
+Database Tables:
+- trades
+- market_listings
+- loans
+- investments
+
+SYSTEM 9: SEASON SYSTEM
+------------------------
+Components:
+- Season lifecycle management
+- Reset mechanics
+- Legacy reward calculation
+- Historical archiving
+
+Key Functions:
+- start_new_season(theme) -> int (season_id)
+- calculate_legacy_rewards(server_id) -> dict
+- reset_game_state() -> None
+- archive_season(season_id) -> None
+
+Season Flow:
+1. Pre-Season (7 days): Registration
+2. Active Season (60 days): Gameplay
+3. Post-Season (3 days): Results and rewards
+4. Reset → New Season
+
+Database Tables:
+- seasons
+- season_results
+- legacy_rewards
+- historical_archive
+
+SYSTEM 10: LEADERBOARD SYSTEM
+------------------------------
+Components:
+- Power ranking calculation
+- Multiple leaderboard types
+- Real-time updates
+- Caching for performance
+
+Key Functions:
+- calculate_power_score(server_id) -> int
+- update_leaderboard(leaderboard_type) -> None
+- get_leaderboard(leaderboard_type, limit) -> list
+- get_nation_rank(server_id, leaderboard_type) -> int
+
+Power Score Formula:
+```
+power_score = (
+    resources × 0.3 +
+    military_strength × 0.4 +
+    territory × 0.2 +
+    population × 0.1
+)
+```
+
+Database Tables:
+- leaderboard (cached rankings)
+- server statistics (raw data)
+
+Caching Strategy:
+- Redis cache with 5-minute TTL
+- Update every 15 minutes
+- Immediate update after major events
+
+SYSTEM 11: NOTIFICATION SYSTEM
+-------------------------------
+Components:
+- Event notification
+- Delivery methods (DM, server channel)
+- Notification preferences
+- Notification queue
+
+Key Functions:
+- queue_notification(user_id, event_type, data) -> None
+- send_notification(notification_id) -> bool
+- get_user_preferences(user_id) -> dict
+- broadcast_to_nation(server_id, message) -> None
+
+Notification Types:
+- War declared on you
+- Battle results
+- Alliance formed/broken
+- Election started
+- Leader changed
+- Espionage discovered
+- Season ending
+
+Database Tables:
+- notifications
+- notification_preferences
+- notification_queue
+
+SYSTEM 12: REPUTATION SYSTEM
+-----------------------------
+Components:
+- Reputation score tracking
+- Betrayal history
+- Trust calculation
+- Public reputation viewing
+
+Key Functions:
+- update_reputation(server_id, change, reason) -> None
+- get_reputation(server_id) -> int
+- get_betrayal_count(server_id) -> int
+- calculate_trust_score(server_id_1, server_id_2) -> float
+
+Reputation Events:
+- Alliance broken: -25
+- Treaty violated: -50
+- War initiated: -5
+- War won honorably: +10
+- Peace treaty honored: +15
+- Betrayal: -75
+
+Database Tables:
+- reputation_scores
+- reputation_events
+- betrayal_records
+
+================================================================================
+5. DATA FLOW EXAMPLES
+================================================================================
+
+EXAMPLE 1: WAR DECLARATION FLOW
+--------------------------------
+1. User executes: /war_declare <nation>
+2. Command Handler validates:
+   - User is leader
+   - War declaration feature enabled
+   - Not on cooldown
+   - Target exists and not allied
+3. Business Logic:
+   - Create war record
+   - Set status to "proposed"
+   - Calculate battle time
+   - Update reputation
+4. Database:
+   - INSERT into wars table
+   - INSERT reputation event
+5. Notifications:
+   - Notify defender nation
+   - Notify both leaders
+   - Update global war list
+6. Response:
+   - Send confirmation to attacker
+   - Display war details
+
+EXAMPLE 2: RESOURCE GENERATION FLOW
+------------------------------------
+1. Scheduled Task triggers (hourly)
+2. System queries all active nations
+3. For each nation:
+   - Count registered citizens
+   - Calculate generation: citizens × rate
+   - Check storage capacity
+   - Add resources (capped at storage)
+   - Log transaction
+4. Database:
+   - UPDATE servers.resources
+   - INSERT into resource_transactions
+5. Cache:
+   - Update Redis cached values
+   - Invalidate affected leaderboards
+6. No user notification (passive)
+
+EXAMPLE 3: BATTLE EXECUTION FLOW
+---------------------------------
+1. Scheduled Task checks for battles (every minute)
+2. Find wars where battle_time <= now and status = "active"
+3. For each battle:
+   - Load aggressor military
+   - Load defender military
+   - Calculate strengths
+   - Apply modifiers
+   - Determine winner
+   - Calculate casualties
+   - Apply rewards/penalties
+   - Update war status
+4. Database:
+   - INSERT into battles table
+   - UPDATE military (casualties)
+   - UPDATE servers (resources, territory)
+   - UPDATE wars (status, winner)
+5. Notifications:
+   - Notify both nations
+   - Post battle report
+   - Update leaderboards
+6. Public announcement in both servers
+
+================================================================================
+6. CACHING STRATEGY
+================================================================================
+
+REDIS CACHE USAGE:
+
+Hot Data (5-minute TTL):
+- Current leaderboards
+- Nation power scores
+- Military strengths
+
+Warm Data (15-minute TTL):
+- Nation profiles
+- Alliance lists
+- Active wars
+
+Session Data (1-hour TTL):
+- User cooldowns
+- Rate limiting
+- Temporary states
+
+Permanent Cache (until invalidated):
+- Configuration values
+- Feature flags
+- Static data
+
+Cache Invalidation Rules:
+- War concluded → invalidate leaderboards
+- Military built → invalidate military strength
+- Resources changed → invalidate power scores
+- Alliance formed/broken → invalidate alliance lists
+
+================================================================================
+7. SCHEDULED TASKS
+================================================================================
+
+TASK SCHEDULE:
+
+Every 1 minute:
+- Check for scheduled battles
+- Process notification queue
+
+Every 5 minutes:
+- Check resource generation eligibility
+
+Every 10 minutes:
+- Process military build queues
+- Update espionage missions
+
+Every 15 minutes:
+- Update leaderboards
+- Calculate power scores
+
+Every 1 hour:
+- Generate resources for all nations
+- Process economic investments
+
+Every 6 hours:
+- Clean up expired cache entries
+- Archive old notifications
+
+Every 24 hours:
+- Charge military upkeep
+- Check for inactive nations
+- Database maintenance
+- Generate daily reports
+
+Weekly:
+- Check for scheduled elections
+- Process season events
+- Database optimization
+
+================================================================================
+8. ERROR HANDLING STRATEGY
+================================================================================
+
+ERROR LEVELS:
+
+CRITICAL (requires immediate action):
+- Database connection lost
+- Redis unavailable
+- Scheduled task failure
+Action: Emergency notification to developer, attempt recovery
+
+ERROR (needs attention):
+- Command execution failure
+- Battle calculation error
+- Invalid data state
+Action: Log detailed error, notify developer, user-friendly message
+
+WARNING (informational):
+- Rate limit hit
+- Feature disabled
+- Permission denied
+Action: Log, inform user appropriately
+
+INFO (normal operation):
+- Command executed
+- Battle scheduled
+- Resources generated
+Action: Normal logging
+
+ERROR RECOVERY:
+
+Database Errors:
+- Retry with exponential backoff (3 attempts)
+- Use connection pool
+- Log failure for manual review
+
+Discord API Errors:
+- Respect rate limits
+- Queue retries
+- Graceful degradation
+
+Invalid Input:
+- Validate before database operations
+- Return helpful error messages
+- Log for abuse detection
+
+================================================================================
+9. SECURITY CONSIDERATIONS
+================================================================================
+
+PERMISSION CHECKS:
+- Every command checks user permissions
+- Server ID verification
+- Leader role validation
+- Developer command protection
+
+DATA VALIDATION:
+- Sanitize all user input
+- Validate numeric ranges
+- Check for SQL injection patterns
+- Prevent command injection
+
+RATE LIMITING:
+- Per-user command limits
+- Per-server action limits
+- Global rate limiting
+- Ban system for abuse
+
+SECRET MANAGEMENT:
+- Environment variables for secrets
+- No secrets in code or git
+- Encrypted configuration
+- Secure credential storage
+
+AUDIT LOGGING:
+- Log all admin actions
+- Track configuration changes
+- Record sensitive operations
+- Maintain audit trail
+
+================================================================================
+10. SCALABILITY CONSIDERATIONS
+================================================================================
+
+CURRENT DESIGN (Supports up to 100 servers):
+- Single bot instance
+- Single database server
+- Single Redis instance
+
+SCALING TO 500+ SERVERS:
+- Database connection pooling
+- Read replicas for queries
+- Redis clustering
+- Leaderboard caching optimizations
+
+SCALING TO 1000+ SERVERS:
+- Discord.py sharding (multiple bot instances)
+- Database sharding by region
+- Load balancer
+- Separate servers for database and bot
+
+SCALING TO 5000+ SERVERS:
+- Microservices architecture
+- Message queue (RabbitMQ/Kafka)
+- Distributed caching
+- CDN for static content
+- Multiple bot clusters
+
+Note: Start simple, scale when needed. Don't over-engineer initially.
+
+================================================================================
+11. MONITORING & METRICS
+================================================================================
+
+KEY METRICS TO TRACK:
+
+Bot Health:
+- Uptime percentage
+- Command response time
+- Error rate
+- API rate limit usage
+
+Game Metrics:
+- Active nations count
+- Daily active users
+- Wars per day
+- Alliances formed/broken
+- Resources generated
+
+Performance Metrics:
+- Database query time
+- Cache hit rate
+- Memory usage
+- CPU usage
+
+Business Metrics:
+- New nation registrations
+- User retention rate
+- Command usage frequency
+- Premium conversion rate
+
+MONITORING TOOLS:
+
+Development Phase:
+- Console logging
+- File logs with rotation
+- Basic health checks
+
+Production:
+- Uptime monitoring (UptimeRobot)
+- Error tracking (Sentry - optional)
+- Metrics dashboard (Grafana - optional)
+- Database monitoring (pgAdmin)
+
+================================================================================
+12. TESTING STRATEGY
+================================================================================
+
+UNIT TESTS:
+- Test individual functions
+- Mock database calls
+- Test battle calculations
+- Test resource generation
+
+INTEGRATION TESTS:
+- Test command flows
+- Test system interactions
+- Test database operations
+- Test API calls
+
+BALANCE TESTS:
+- Simulate battles
+- Test progression curves
+- Verify economic balance
+- Test edge cases
+
+LOAD TESTS:
+- Simulate multiple users
+- Test concurrent commands
+- Database stress testing
+- Cache performance
+
+ALPHA/BETA TESTING:
+- Real users in controlled environment
+- Feedback collection
+- Bug reporting
+- Balance adjustments
+
+================================================================================
+END OF SYSTEM ARCHITECTURE
+================================================================================
